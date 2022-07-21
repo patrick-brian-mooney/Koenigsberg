@@ -8,7 +8,9 @@ version. See the file LICENSE.md for details.
 """
 
 
-from typing import Any, Callable, Generator, Iterable
+import functools
+
+from typing import Any, Callable, Dict, Generator, Hashable, Iterable, Optional
 
 
 def flexible_decorator(*args, **kwargs) -> Callable:
@@ -60,3 +62,53 @@ def flatten_list(l: Iterable) -> Generator[Any, None, None]:
             yield from item
         else:
             yield item
+
+
+def _default_path_formatter(path: bytearray,
+                            path_translation_dict: Dict[int, Hashable],
+                            start: Optional[Hashable],
+                            node_translation_dict: Optional[Dict[int, Hashable]]) -> str:
+    """Takes PATH, a bytearray, and uses PATH_TRANSLATION_DICT to turn it into a
+    human-readable form. Optionally, also uses START and NODE_TRANSLATION_DICT to
+    indicate which node begins the path.
+
+    Ignores any zero bytes at the end of the array; those are steps not taken. Zero
+    bytes must occur in a contiguous block at the end of the array; no non-zero
+    bytes may follow them.
+
+    If either of START or NODE_TRANSLATION_DICT is supplied, the other must also be
+    supplied.
+
+    Don't use this function directly; call the no-leading-underscore
+    default_path_formatter(), below.
+    """
+    if 0 in path:
+        assert all([p == 0 for p in path[path.find(0):]]), "Zero-bytes can only occur contiguously at the end of a path, not at the beginning or in the middle!"
+
+    if start:
+        ret = node_translation_dict[start] + ': '
+    else:
+        ret = ''
+
+    ret += ' -> '.join(str(path_translation_dict[p]) for p in path if p)
+    return ret
+
+
+
+def default_path_formatter(path_translation_dict: Dict[int, Hashable], *,
+                           start: Optional[Hashable] = None,
+                           node_translation_dict: Optional[Dict[int, Hashable]] = None) -> Callable:
+    """'Fixes' the three relevant arguments into a version of
+    _default_path_formatter() that can be called with just PATH. Useful for passing
+    into functions in the main Königsberg code that expect to just take a function
+    that can process a bytearray PATH.
+    """
+    assert all([start, node_translation_dict]) or all([not start, not node_translation_dict])
+    return functools.partial(_default_path_formatter, path_translation_dict=path_translation_dict, start=start, node_translation_dict=node_translation_dict)
+
+
+def maximally_dense_network_graph(num_nodes: int) -> Dict[int, Iterable[int]]:
+    """Automatically constructs and returns a graph with NUM_NODES nodes, each of
+    which is connected to every other node.
+    """
+    return {n: [d for d in range(1, 1 + num_nodes) if d != n] for n in range(1, 1 + num_nodes)}
