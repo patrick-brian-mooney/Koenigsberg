@@ -32,13 +32,11 @@ def limited_koenigsberg_sample_test() -> None:
 
 
 def full_koenigsberg_sample_test() -> None:
-    # FIXME: read from file now in sample_data/
-    koenigsberg.print_all_dict_solutions(sd.Königsberg)
+    koenigsberg.print_all_dict_solutions(koenigsberg.read_map_file(koenigsberg.sample_data / 'Königsberg.map'))
 
 
 def hex_ring_sample_test() -> None:
-    # FIXME: read from file now in sample_data/
-    koenigsberg.print_all_graph_solutions(sd.hex_ring)
+    koenigsberg.print_all_graph_solutions(koenigsberg.read_graph_file(koenigsberg.sample_data / 'hex_ring.graph'))
 
 
 def dense_polygon_sample_test(sides: int = 6) -> None:
@@ -47,6 +45,12 @@ def dense_polygon_sample_test(sides: int = 6) -> None:
 
 
 class TestDataSanityChecks(unittest.TestCase):
+    @unittest.skip("Command-line parsing tests don't work yet.")
+    def test_command_line(self) -> None:
+        with self.assertRaises(Exception):
+            # FIXME! Doesn't currently work!
+            koenigsberg.parse_args(['--graph', '/tmp/hello.json', '--map', '/tmp/hello.json'])
+
     def test_graph_sanity(self) -> None:
         with self.assertRaises(ValueError):
             # GRAPH must be a dict

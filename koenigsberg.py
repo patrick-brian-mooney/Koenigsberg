@@ -37,7 +37,7 @@ from pathlib import Path
 import sys
 import traceback
 
-from typing import Callable, Dict, Generator, Hashable, Iterable, Tuple, Type, Union
+from typing import Callable, Dict, Generator, Hashable, Iterable, Optional, Tuple, Type, Union
 
 
 import util
@@ -46,6 +46,10 @@ import util
 # Constants
 __version__ = "alpha"
 
+# File system locations
+script_home = Path(__file__).parent.resolve()
+sample_data = script_home / 'sample_data'
+
 # First, verbosity levels. Make these ENUMs when we Cythonize?
 VERBOSITY_MINIMAL = 0
 VERBOSITY_REPORT_PROGRESS_ON_SAVE = 1
@@ -53,11 +57,15 @@ VERBOSITY_FRIENDLY_PROGRESS_CHATTER = 2
 VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS = 3
 VERBOSITY_REPORT_ALL_ABANDONED_PATHS = 4
 
-# Having to do with how often abandonded paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
-abandoned_paths_report_interval = 40
+# Global variables that can be set with command_line parameters follow
+verbosity = 1
 
 # Having to do with saving
-checkpoint_interval = 10
+checkpoint_interval = 10            # save occurs when length of path being abandonded as complete
+min_save_interval = 15 * 60         # seconds
+
+# Having to do with how often abandonded paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
+abandoned_paths_report_interval = 20
 
 
 def _sanity_check_graph(graph: Dict[Hashable, Iterable[Hashable]],
@@ -150,9 +158,9 @@ def normalize_dicts(paths_to_nodes: Dict[Hashable, Iterable[Hashable]],
     #FIXME: optimization (later): return None for items 3 and/or 4 if the human-
     supplied descriptions were already integers.
     """
-    check, err = _sanity_check_dicts(paths_to_nodes, nodes_to_paths, raise_error)
+    check, errrr = _sanity_check_dicts(paths_to_nodes, nodes_to_paths, raise_error)
     if not check:
-        traceback.print_exception(err, chain=True)
+        traceback.print_exception(type(errrr), errrr, errrr.__traceback__, chain=True)
         sys.exit(3)
 
     # First, set up the translation tables that we're going to return so that our int-based dictionaries can be decoded later for the user
@@ -195,9 +203,9 @@ def graph_to_dicts(graph: Dict[Hashable, Iterable[Hashable]]
     You will presumably want to call normalize_dicts() on this pair, or at least
     _sanity_check_dicts(), but this function does not do so for you.
     """
-    check, err = _sanity_check_graph(graph)
+    check, errrr = _sanity_check_graph(graph)
     if not check:
-        traceback.print_exception(err, chain=True)
+        traceback.print_exception(type(errrr), errrr, errrr.__traceback__, chain=True)
         sys.exit(3)
 
     all_paths = set()
@@ -212,20 +220,19 @@ def graph_to_dicts(graph: Dict[Hashable, Iterable[Hashable]]
 
 
 def log_it(message: str,                        # inline me when we Cythonize
-           minimum_verbosity: int,
-           current_verbosity_level: int) -> None:
+           minimum_verbosity: int) -> None:
     """Prints MESSAGE, provided that the current verbosity level, specified by
     CURRENT_VERBOSITY_LEVEL, is at least the MINIMUM_VERBOSITY specified for this
     message.
     """
-    if current_verbosity_level >= minimum_verbosity:
+    if verbosity >= minimum_verbosity:
         print(message)
 
 
-def do_save(current_verbosity: int) -> None:
+def do_save() -> None:
     """Save our current status, so we can restart from this point later.
     """
-    log_it("Skipping regularly mandated save of progress data! #FIXME!", VERBOSITY_REPORT_PROGRESS_ON_SAVE, current_verbosity)
+    log_it("Skipping regularly mandated save of progress data! #FIXME!", VERBOSITY_REPORT_PROGRESS_ON_SAVE)
 
 
 def path_is_pruned(path: bytearray) -> bool:
@@ -240,8 +247,7 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
                start_from: int,
                steps_taken: bytearray,
                num_steps_taken: int,
-               output_func: Callable,
-               verbosity: int=1) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+               output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
     """Recursively calls itself to solve the map described by PATHS_TO_NODES and
     NODES_TO_PATHS, starting from START_FROM, having already taken NUM_STEPS_TAKEN
     steps, which are recorded in the STEPS_TAKEN array. STEPS_TAKEN must be
@@ -254,8 +260,6 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
     OUTPUT_FUNC must be a callable function that takes one parameter -- a bytearray
     that is the STEPS_TAKEN array -- and transforms it into a printed string. Use,
     e.g., util.default_path_formatter.
-
-    VERBOSITY is the current verbosity level.
 
     Makes no attempts to verify that the data is sane -- call _sanity_check_dicts()
     for that.
@@ -270,35 +274,33 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
             for next_path in next_steps:
                 next_loc = [p for p in paths_to_nodes[next_path] if p != start_from][0]
                 steps_taken[num_steps_taken] = next_path        # The step we're taking right now.
-                yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func, verbosity)
+                yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func)
                 steps_taken[num_steps_taken] = 0                # Free up the space for the step we just took
         else:
             if (len([b for b in steps_taken if b]) % abandoned_paths_report_interval) == 0:
-                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS, verbosity)
+                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS)
             else:
-                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_ALL_ABANDONED_PATHS, verbosity)
+                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_ALL_ABANDONED_PATHS)
             if (num_steps_taken % checkpoint_interval) == 0:
-                do_save(verbosity)
+                do_save()
 
 
 def solve_from(paths_to_nodes: Dict[int, Tuple[int]],
                nodes_to_paths: Dict[int, Tuple[int]],
                start_from: int,
-               output_func: Callable,
-               verbosity: int=1) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+               output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
     """Friendly interface to _solve_from(), above. It does not require pre-allocation
     of a bytearray and it takes fewer parameters because it does not call itself
     recursively.
     """
     steps_taken = bytearray([0] * len(paths_to_nodes))
-    yield from _solve_from(paths_to_nodes, nodes_to_paths, start_from, steps_taken, 0, output_func, verbosity)
+    yield from _solve_from(paths_to_nodes, nodes_to_paths, start_from, steps_taken, 0, output_func)
 
 
 def solve_from_multiple(paths_to_nodes: Dict[int, Tuple[int]],
                         nodes_to_paths: Dict[int, Tuple[int]],
                         starts_from: Iterable[int],
-                        output_func: Callable,
-                        verbosity: int=1) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+                        output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
     """Convenience function: repeatedly solve the map described by PATHS_TO_NODES and
     by NODES_TO_PATHS by starting from all of the paths in STARTS_FROM, an iterable
     of starting locations.
@@ -309,22 +311,20 @@ def solve_from_multiple(paths_to_nodes: Dict[int, Tuple[int]],
     """
     steps_taken = bytearray([0] * len(paths_to_nodes))
     for start in starts_from:
-        yield from _solve_from(paths_to_nodes, nodes_to_paths, start, steps_taken, 0, output_func, verbosity)
+        yield from _solve_from(paths_to_nodes, nodes_to_paths, start, steps_taken, 0, output_func)
 
 
 def solve_from_all(paths_to_nodes: Dict[int, Tuple[int]],
                    nodes_to_paths: Dict[int, Tuple[int]],
-                   output_func: Callable,
-                   verbosity: int=1) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+                   output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
     """Convenience function: solves the PATHS_TO_NODES/NODES_TO_PATHS maps passed in,
     in the same way as solve_from_multiple(), but from every possible starting
     point, not just selected ones.
     """
-    yield from solve_from_multiple(paths_to_nodes, nodes_to_paths, nodes_to_paths.keys(), output_func, verbosity)
+    yield from solve_from_multiple(paths_to_nodes, nodes_to_paths, nodes_to_paths.keys(), output_func)
 
 
-def print_all_dict_solutions(single_dict: dict,
-                             verbosity: int=1) -> None:
+def print_all_dict_solutions(single_dict: dict) -> None:
     """Friendly interface that bundles together all of the various components of a
     generic solution that works fine for many purposes much of the time. It takes
     SINGLE_DICT, a parameter that bundles together both dictionaries describing a
@@ -334,8 +334,6 @@ def print_all_dict_solutions(single_dict: dict,
         'paths to nodes': {  [ a valid paths_to_nodes dictionary ]  }
     }
 
-    It also allows the caller to specify a VERBOSITY level.
-
     Given those parameters, it normalizes the dictionaries, finds all solutions, and
     prints them using the default solution formatter.
     """
@@ -343,7 +341,7 @@ def print_all_dict_solutions(single_dict: dict,
     formatter = util.default_path_formatter(p_trans)
 
     sol_found = False
-    for i, path in enumerate(solve_from_all(p, n, formatter, verbosity), 1):
+    for i, path in enumerate(solve_from_all(p, n, formatter), 1):
         print(f"Solution #{i}: \t {formatter(path)}")
         sol_found = True
 
@@ -352,18 +350,16 @@ def print_all_dict_solutions(single_dict: dict,
         print("    No solutions found!")
 
 
-def print_all_graph_solutions(graph: dict,
-                              verbosity: int=1) -> None:
+def print_all_graph_solutions(graph: dict) -> None:
     """Friendly interfact that takes a graph, as defined in graph_to_dicts(), above,
     and finds, then prints, all solutions from any point, just as
     print_all_dict_solutions(), above, does for maps represented by dicts.
     """
     p_to_n, n_to_p = graph_to_dicts(graph)
-    print_all_dict_solutions(graph, verbosity)
+    print_all_dict_solutions(graph)
 
 
-def read_graph_file(which_file: Union[str, Path],
-                    verbosity: int=1) -> dict:
+def read_graph_file(which_file: Union[str, Path]) -> dict:
     """Reads a JSON file containing graph-type data, as described in graph_to_dicts(),
     above. Performs some basic sanity checking.
 
@@ -373,24 +369,23 @@ def read_graph_file(which_file: Union[str, Path],
     try:
         if not isinstance(which_file, Path):
             which_file = Path(which_file)
-        log_it(f"Opening graph file {which_file.name} ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it(f"Opening graph file {which_file.name} ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         if which_file.suffix.lower() != ".graph":
-            log_it("    Warning! File does not have a .graph suffix. Trying anyway.\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+            log_it("    Warning! File does not have a .graph suffix. Trying anyway.\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         with open(which_file, mode='rt', encoding='utf-8') as graph_file:
             graph = json.load(graph_file)
-        log_it("File opened, performing sanity checks ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it("File opened, performing sanity checks ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         _sanity_check_graph(graph)
-        log_it("    ... sanity checks passed!\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it("    ... sanity checks passed!\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         return graph
     except (IOError, json.JSONDecodeError) as errrr:
-        traceback.print_exception(errrr, chain=True)
+        traceback.print_exception(type(errrr), errrr, errrr.__traceback__, chain=True)
         sys.exit(2)
 
 
-def read_map_file(which_file: Union[str, Path],
-                  verbosity: int = 1) -> dict:
+def read_map_file(which_file: Union[str, Path]) -> dict:
     """Reads a JSON file containing a dictionary that encapsulates both a
     nodes- paths dict and a paths->nodes dict under the names expected by
     print_all_dict_solutions(), above. Performs some basic sanity checks.
@@ -401,43 +396,72 @@ def read_map_file(which_file: Union[str, Path],
     try:
         if not isinstance(which_file, Path):
             which_file = Path(which_file)
-        log_it(f"Opening map file {which_file.name} ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it(f"Opening map file {which_file.name} ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         if which_file.suffix.lower() != ".map":
-            log_it("    Warning! File does not have a .map suffix. Trying anyway.\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+            log_it("    Warning! File does not have a .map suffix. Trying anyway.\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         with open(which_file, mode='rt', encoding='utf-8') as graph_file:
             map = json.load(graph_file)
 
-        log_it("File opened, performing sanity checks ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it("File opened, performing sanity checks ...", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         assert 'nodes to paths' in map, "File {which_file.name} does not have a 'nodes to paths' key!"
         assert 'paths to nodes' in map, "File {which_file.name} does not have a 'paths to nodes' key!"
         _sanity_check_dicts(map['paths to nodes'], map['nodes to paths'])
-        log_it("    ... sanity checks passed!\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER, verbosity)
+        log_it("    ... sanity checks passed!\n", VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         return map
     except (IOError, json.JSONDecodeError) as errrr:
-        traceback.print_exception(errrr, chain=True)
+        traceback.print_exception(type(errrr), errrr, errrr.__traceback__, chain=True)
         sys.exit(2)
 
 
 def parse_args(args) -> None:
-    parser = argparse.ArgumentParser(description=__doc__, prog="Königsberg")
-    parser.add_argument('--graph', '-g', type=Path)
-    parser.add_argument('--map', '-m', type=Path)
+    """Parse the arguments passed on the command line. Set any global parameters that
+    need to be set, then perform the analysis indicated.
+
+    #FIXME! Subclass ArgumentParser so we can exit with an appropriate status code
+    on errors that it catches.
+    """
+    class ErrorCatchingArgumentParser(argparse.ArgumentParser):
+        """More or less stolen outright from the Python docs.
+        """
+        def exit(self, status: int = 2, message: Optional[str] = None):
+            if status:
+                raise Exception(f'Exiting because of an error: {message}')
+            exit(status)
+
+    global verbosity, checkpoint_interval, min_save_interval, abandoned_paths_report_interval
+
+    parser = ErrorCatchingArgumentParser(description=__doc__, prog="Königsberg")
+    parser.add_argument('--graph', '-g', type=Path, help="An appropriately formatted .graph file to solve exhaustively")
+    parser.add_argument('--map', '-m', type=Path, help="An appropriately formatted .map file to solve exhaustively")
+
+    parser.add_argument('--checkpoint-length', '--check', '-c', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stoppoed and resumed.")
+    parser.add_argument('--min-save-interval', '--min-save', '-n', type=int, help="Minimum amount of time, in seconds, between progress saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.")
+    parser.add_argument('--abandoned-report-interval', '--abandoned-report', '-a', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
+
     parser.add_argument('--verbose', '-v', action='count', default=1)
-    parser.add_argument('--version', action='version', version=f'Königsberg {__version__}, by Patrick Mooney')
+    parser.add_argument('--version', action='version', version=f'Königsberg, version {__version__}, by Patrick Mooney')
     args = parser.parse_args(args)
+
+    verbosity = args.verbose
+    if args.abandoned_report_interval:
+        abandoned_paths_report_interval = args.abandoned_report_interval
+    if args.checkpoint_length:
+        checkpoint_interval = args.checkpoint_length
+    if args.min_save_interval:
+        min_save_interval = args.min_save_interval
+
     assert not (args.graph and args.map), "ERROR! Only one of --graph or --map must be specified."
     if args.graph:
         graph = read_map_file(args.graph)
-        print_all_graph_solutions(graph, args.verbose)
+        print_all_graph_solutions(graph)
     elif args.map:
         map = read_map_file(args.map)
-        print_all_dict_solutions(map, args.verbose)
+        print_all_dict_solutions(map)
     else:
         print("You must specify either --map or --graph!")
-        sys.exit(1)
-
+        sys.exit(2)
 
 
 if __name__ == "__main__":
