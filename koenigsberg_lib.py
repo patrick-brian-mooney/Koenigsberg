@@ -21,8 +21,8 @@ Verbosity levels:
     0 - Only report fatal errors and successful paths
     1 - also report when progress data is saved
     2 - also report basic info about how friendly interfaces are progressing
-    3 - also report when selected exhausted paths are abandoned
-    4 - also report when any exhausted path is abandoned
+    3 - also report when selected exhausted paths are abandoned, and give total abandoned paths at that time.
+    4 - also report when any exhausted path is abandoned, and give total examined paths at that time.
 
 This program was written by Patrick Mooney. It is copyright 2022. It is
 released under the GNU GPL, either version 3 or (at your option) any later
@@ -30,7 +30,10 @@ version. See the file LICENSE.md for details.
 """
 
 
+import bz2
+import pickle
 import sys
+import time
 import traceback
 
 from pathlib import Path
@@ -38,7 +41,6 @@ from typing import Callable, Dict, Generator, Hashable, Iterable, Tuple, Type, U
 
 
 import util
-
 
 # Constants
 __version__ = "alpha"
@@ -54,15 +56,31 @@ VERBOSITY_FRIENDLY_PROGRESS_CHATTER = 2
 VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS = 3
 VERBOSITY_REPORT_ALL_ABANDONED_PATHS = 4
 
+# Global variables tracking the list of paths that have been explored exhaustively.
+exhausted_paths = None              # or a set(), if we're tracking progress
+paths_length_at_last_prune = 0
+total_paths_exhausted_num = 0
+
+# Global variables tracking solutions found.
+solutions = set()
+
 # Global variables that can be set with command_line parameters follow
 verbosity = 1
 
 # Having to do with saving
 checkpoint_interval = 10            # save occurs when length of path being abandonded as complete
 min_save_interval = 15 * 60         # seconds
+last_save = time.monotonic()
+checkpoint_path = None              # or a Path
 
-# Having to do with how often abandonded paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
+# Having to do with how often abandoned paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
 abandoned_paths_report_interval = 20
+
+# Having to do with how often the list of exhausted paths is pruned.
+exhausted_paths_prune_threshold = 100      #FIXME! Experiemnt with this value
+
+# Other globals
+run_start = time.monotonic()
 
 
 def _sanity_check_graph(graph: Dict[Hashable, Iterable[Hashable]],
@@ -226,25 +244,105 @@ def log_it(message: str,                        # inline me when we Cythonize
         print(message)
 
 
-def do_save() -> None:
+def do_prune_exhausted_paths_list() -> None:
+    """Prune the list of exhausted paths so that it consists only of the shortest paths
+    that represents the path, in which each bytestring is a list of intersections
+    that have been exhaustively traversed and in which having 0x010x020x030x04 in
+    addition to 0x010x020x03 is redundant: the second includes enough information to
+    show that the first is redundant.
+
+    Pruning takes time, but speeds up the "can we skip this path" test, so it helps
+    overall ... up to a point. How often pruning happens can be adjusted with the
+    --prune-exhausted-interval switch, which adjusts the threshold of how many new
+    paths can be added to the list before the list is pruned.
+    """
+    global exhausted_paths, paths_length_at_last_prune
+
+    if not exhausted_paths:
+        return
+
+    pruned_paths_list = set()
+    for p in sorted(exhausted_paths, key=len):
+        for length in range(1+len(p)):
+            if p[:length] in pruned_paths_list:
+                break
+        else:
+            pruned_paths_list.add(p)
+
+    exhausted_paths = pruned_paths_list
+    paths_length_at_last_prune = len(pruned_paths_list)
+
+
+def do_save(even_if_not_time: bool = False,
+            suppress_prune: bool = False) -> None:
     """Save our current status, so we can restart from this point later.
     """
-    log_it("Skipping regularly mandated save of progress data! #FIXME!", VERBOSITY_REPORT_PROGRESS_ON_SAVE)
+    global solutions, exhausted_paths, total_paths_exhausted_num, run_start, last_save
+
+    if not checkpoint_path:         # no checkpoint file defined? We're not saving!
+        return
+    if (not even_if_not_time) and ((time.monotonic() - last_save) < min_save_interval):
+        return
+    if not suppress_prune:
+        do_prune_exhausted_paths_list()
+
+    data = {
+        'solutions': solutions,
+        'exhausted_paths': exhausted_paths,
+        'num_exhausted': total_paths_exhausted_num,
+        'total_time': time.monotonic() - run_start,
+    }
+
+    if checkpoint_path.exists():
+        checkpoint_path.rename(checkpoint_path.with_suffix(checkpoint_path.resolve().suffix + '.bak'))
+    with bz2.open(checkpoint_path, mode='wb') as checkpoint_file:
+        pickle.dump(data, checkpoint_file, protocol=-1)
+
+    log_it(f"Progress saved to {checkpoint_path.name}! {len(solutions)} solutions found and {total_paths_exhausted_num} paths exhaused in {data['total_time'] / 60:.5} minutes.", VERBOSITY_REPORT_PROGRESS_ON_SAVE)
+    last_save = time.monotonic()
+
+
+def do_load_progress() -> None:
+    """Restore progress from the file at the global CHECKPOINT_PATH variable, if it
+    exists; if it doesn't, report that it doesn't, and that we're restarting from
+    scratch.
+    """
+    global solutions, exhausted_paths, total_paths_exhausted_num, run_start
+
+    log_it(f"  ... opening progress file {checkpoint_path.name} ...", VERBOSITY_REPORT_PROGRESS_ON_SAVE)
+    try:
+        with bz2.open(checkpoint_path, mode='rb') as checkpoint_file:
+            data = pickle.load(checkpoint_file)
+        solutions = data['solutions']
+        exhausted_paths = data['exhausted_paths']
+        total_paths_exhausted_num = data['num_exhausted']
+        run_start = time.monotonic() - data['total_time']
+        print(f"  ... data loaded from {checkpoint_path.name}!")
+    except (IOError, pickle.PickleError) as errrr:
+        print(f"Warning! Cannot load progress data from {checkpoint_path.name}; the system said: {errrr}")
+        print("Starting from scratch.")
 
 
 def path_is_pruned(path: bytearray) -> bool:
     """Return True if this is a path that we have already explored, e.g. in a previous
     run.
     """
-    return False            #FIXME!
+    global exhausted_paths
+
+    if not exhausted_paths: return
+
+    for p in exhausted_paths:
+        if path.startswith(p):      # .startswith() is also True if path == p.
+            return True
+    return False
 
 
 def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
-               nodes_to_paths: Dict[int, Tuple[int]],
-               start_from: int,
-               steps_taken: bytearray,
-               num_steps_taken: int,
-               output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+                nodes_to_paths: Dict[int, Tuple[int]],
+                start_from: int,
+                steps_taken: bytearray,
+                num_steps_taken: int,
+                output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
     """Recursively calls itself to solve the map described by PATHS_TO_NODES and
     NODES_TO_PATHS, starting from START_FROM, having already taken NUM_STEPS_TAKEN
     steps, which are recorded in the STEPS_TAKEN array. STEPS_TAKEN must be
@@ -260,21 +358,32 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
 
     Makes no attempts to verify that the data is sane -- call _sanity_check_dicts()
     for that.
-
-    #FIXME! Does not save progress or emit status data of any kind.
     """
-    if len(tuple(b for b in steps_taken if b)) == len(paths_to_nodes):     # if we've hit every path ...
-        yield bytes(steps_taken)                        # emit a copy of the current path: it's a solution!
-    else:
+    global exhausted_paths, solutions
+    global exhausted_paths_prune_threshold, paths_length_at_last_prune, total_paths_exhausted_num
+
+    if num_steps_taken == len(paths_to_nodes):                  # if we've hit every path ...
+        sol = bytes([s for s in steps_taken if s])              # create a copy of the current path
+        solutions.add(sol)                                      # add it to the set of solutions
+        yield bytes(sol)                                        # emit it
+
+    else:                                                       # We have not explored a complete path.
         next_steps = [p for p in nodes_to_paths[start_from] if p not in steps_taken]
         if next_steps:
-            for next_path in next_steps:
+            for next_path in sorted(next_steps):
                 next_loc = [p for p in paths_to_nodes[next_path] if p != start_from][0]
                 steps_taken[num_steps_taken] = next_path        # The step we're taking right now.
-                yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func)
+                if not path_is_pruned(steps_taken):
+                    yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func)
                 steps_taken[num_steps_taken] = 0                # Free up the space for the step we just took
+
         else:
-            if (len([b for b in steps_taken if b]) % abandoned_paths_report_interval) == 0:
+            total_paths_exhausted_num += 1
+            if exhausted_paths is not None:
+                exhausted_paths.add(bytes((s for s in steps_taken if s)))
+                if len(exhausted_paths) > (exhausted_paths_prune_threshold + paths_length_at_last_prune):
+                    do_prune_exhausted_paths_list()
+            if (num_steps_taken % abandoned_paths_report_interval) == 0:
                 log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS)
             else:
                 log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_ALL_ABANDONED_PATHS)

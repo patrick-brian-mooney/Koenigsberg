@@ -6,7 +6,7 @@ considered "traversed" if they have been crossed in either direction. There is
 no form of support for directed graphs.
 
 The program name comes from "the Königsberg Bridge Problem," a specific example
-of this type of problem, once which was solved by Leonard Euler in 1775; see
+of this type of problem, one which was solved by Leonard Euler in 1775; see
 https://www.maa.org/press/periodicals/convergence/leonard-eulers-solution-to-the-konigsberg-bridge-problem.
 This code brute-forces the solution rather than applying Euler's solution.
 
@@ -37,6 +37,11 @@ import traceback
 
 from pathlib import Path
 from typing import Union, Optional
+
+try:
+    import pyximport; pyximport.install()
+except ImportError:
+    print("Cython not completely imported! Running in pure-Python mode.")
 
 import koenigsberg_lib as kl
 
@@ -104,32 +109,43 @@ def parse_args(args) -> None:
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
         """More or less stolen outright from the Python docs.
         """
-        def exit(self, status: int = 2, message: Optional[str] = None):
+        def exit(self, status: int = 0, message: Optional[str] = None):
             if status:
-                raise Exception(f'Exiting because of an error: {message}')
+                raise Exception(f'Exiting with status {status} because of a fatal error:\n{message}')
             exit(status)
 
-    global verbosity, checkpoint_interval, min_save_interval, abandoned_paths_report_interval
-
-    parser = ErrorCatchingArgumentParser(description=__doc__, prog="Königsberg")
+    parser = ErrorCatchingArgumentParser(description=__doc__, prog="Königsberg", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--graph', '-g', type=Path, help="An appropriately formatted .graph file to solve exhaustively")
     parser.add_argument('--map', '-m', type=Path, help="An appropriately formatted .map file to solve exhaustively")
 
-    parser.add_argument('--checkpoint-length', '--check', '-c', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stoppoed and resumed.")
-    parser.add_argument('--min-save-interval', '--min-save', '-n', type=int, help="Minimum amount of time, in seconds, between progress saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.")
+    parser.add_argument('--checkpoint-file', '--check', '-c', type=Path, help="Path to save and restore checkpointing data to. If unspecified, no checkpoints will be created.")
+    parser.add_argument('--checkpoint-length', '--check-len', '-e', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stoppoed and resumed.")
+    parser.add_argument('--min-save-interval', '--min-save', '-n', type=int, help="Minimum amount of time, in seconds, between checkpointing saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.")
     parser.add_argument('--abandoned-report-interval', '--abandoned-report', '-a', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {kl.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
+    parser.add_argument('--prune-exhausted-interval', '-p', type=int, help="Threshold for cleaning up the list of paths we've exhausted; doing this more often will make the program run faster when it's not cleaning this list but will make the list-cleaning action happen more often.")
 
-    parser.add_argument('--verbose', '-v', action='count', default=1)
-    parser.add_argument('--version', action='version', version=f'Königsberg, version {kl.__version__}, by Patrick Mooney')
+    parser.add_argument('--verbose', '-v', action='count', default=1, help="Increase how chatty the program is about the progress it makes. May be specified multiple times.")
+    parser.add_argument('--version', '--vers', '--ver', action='store_true', help="Display version information and exit.")
     args = parser.parse_args(args)
 
-    verbosity = args.verbose
-    if args.abandoned_report_interval:
-        abandoned_paths_report_interval = args.abandoned_report_interval
+    kl.verbosity = args.verbose
+    if args.version:
+        print(f'\n\nKönigsberg, version {kl.__version__}, by Patrick Mooney')
+        print(f"Use {Path(__file__).resolve().name} --help for more help.\n\n")
+        sys.exit(0)
+
+    if args.checkpoint_file:
+        kl.checkpoint_path = args.checkpoint_file
+        kl.exhausted_paths = set()                      # Set up an empty set to be used to check progress.
+        kl.do_load_progress()
     if args.checkpoint_length:
-        checkpoint_interval = args.checkpoint_length
+        kl.checkpoint_interval = args.checkpoint_length
     if args.min_save_interval:
-        min_save_interval = args.min_save_interval
+        kl.min_save_interval = args.min_save_interval
+    if args.abandoned_report_interval:
+        kl.abandoned_paths_report_interval = args.abandoned_report_interval
+    if args.prune_exhausted_interval:
+        kl.exhausted_paths_prune_threshold = args.prune_exhausted_interval
 
     assert not (args.graph and args.map), "ERROR! Only one of --graph or --map must be specified."
     if args.graph:
@@ -144,4 +160,6 @@ def parse_args(args) -> None:
 
 
 if __name__ == "__main__":
-    parse_args(sys.argv[1:])
+    # parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", "--check", "hexlike.dat"])
+    # parse_args(sys.argv[1:])
+    parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])
