@@ -11,18 +11,17 @@ version. See the file LICENSE.md for details.
 import unittest
 
 import koenigsberg
+import koenigsberg_lib as kl
 import util
 
 
 def limited_koenigsberg_sample_test() -> None:
-    # FIXME: read from file now in sample_data/
-    p, n, p_trans, n_trans, p_trans_rev, n_trans_rev = koenigsberg.normalize_dicts(sd.Königsberg['paths to nodes'], sd.Königsberg['nodes to paths'])
-
-    path = bytearray([0] * 7)
+    sd = koenigsberg.read_map_file('sample_data/Königsberg.map')
+    p, n, p_trans, n_trans, p_trans_rev, n_trans_rev = kl.normalize_dicts(sd['paths to nodes'], sd['nodes to paths'])
     formatter = util.default_path_formatter(p_trans)
 
     sol_found = False
-    for i, path in enumerate(koenigsberg.solve_from(p, n, n_trans_rev['A'], path, 0), 1):
+    for i, path in enumerate(kl.solve_from(p, n, n_trans_rev['A'], formatter), 1):
         print(f"Solution #{i}: \t {p_trans(path)}")
         sol_found = True
 
@@ -32,16 +31,18 @@ def limited_koenigsberg_sample_test() -> None:
 
 
 def full_koenigsberg_sample_test() -> None:
-    koenigsberg.print_all_dict_solutions(koenigsberg.read_map_file(koenigsberg.sample_data / 'Königsberg.map'))
+    map = koenigsberg.read_map_file('sample_data/Königsberg.map')
+    kl.print_all_dict_solutions(map['paths to nodes'], map['nodes to paths'])
 
 
 def hex_ring_sample_test() -> None:
-    koenigsberg.print_all_graph_solutions(koenigsberg.read_graph_file(koenigsberg.sample_data / 'hex_ring.graph'))
+    kl.print_all_graph_solutions(koenigsberg.read_graph_file('sample_data/hex_ring.graph'))
 
 
 def dense_polygon_sample_test(sides: int = 6) -> None:
-    p_to_n, n_to_p = koenigsberg.graph_to_dicts(util.maximally_dense_network_graph(sides))
-    koenigsberg.print_all_dict_solutions({'nodes to paths': n_to_p, 'paths to nodes': p_to_n}, verbosity=5)
+    # FIXME: this fails to operate properly when sides = 5. Why?
+    p_to_n, n_to_p = kl.graph_to_dicts(util.maximally_dense_network_graph(sides))
+    kl.print_all_dict_solutions(paths_to_nodes=p_to_n, nodes_to_paths=n_to_p)
 
 
 class TestDataSanityChecks(unittest.TestCase):
