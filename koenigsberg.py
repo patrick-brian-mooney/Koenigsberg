@@ -162,4 +162,5 @@ def parse_args(args) -> None:
 if __name__ == "__main__":
     # parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", "--check", "hexlike.dat"])
     # parse_args(sys.argv[1:])
-    parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])
+    import cProfile
+    cProfile.run("""parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])""", sort='time')

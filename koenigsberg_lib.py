@@ -77,7 +77,7 @@ checkpoint_path = None              # or a Path
 abandoned_paths_report_interval = 20
 
 # Having to do with how often the list of exhausted paths is pruned.
-exhausted_paths_prune_threshold = 100      #FIXME! Experiemnt with this value
+exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
 
 # Other globals
 run_start = time.monotonic()
@@ -329,10 +329,10 @@ def path_is_pruned(path: bytearray) -> bool:
     """
     global exhausted_paths
 
-    if not exhausted_paths: return
+    if not exhausted_paths: return False
 
-    for p in exhausted_paths:
-        if path.startswith(p):      # .startswith() is also True if path == p.
+    for length in range(1, 1 + len([node for node in path if node])):
+        if bytes(path[:length]) in exhausted_paths:
             return True
     return False
 
@@ -367,13 +367,13 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
         solutions.add(sol)                                      # add it to the set of solutions
         yield bytes(sol)                                        # emit it
 
-    else:                                                       # We have not explored a complete path.
+    else:                                                       # We have not explored every possible path from this point.
         next_steps = [p for p in nodes_to_paths[start_from] if p not in steps_taken]
         if next_steps:
             for next_path in sorted(next_steps):
                 next_loc = [p for p in paths_to_nodes[next_path] if p != start_from][0]
                 steps_taken[num_steps_taken] = next_path        # The step we're taking right now.
-                if not path_is_pruned(steps_taken):
+                if (not exhausted_paths) or (not path_is_pruned(steps_taken)):
                     yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func)
                 steps_taken[num_steps_taken] = 0                # Free up the space for the step we just took
 
