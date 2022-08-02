@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.9
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """A program intending to supply all possible paths that successfully traverse an
 undirected graph while passing over each pathway exactly once. Paths are
 considered "traversed" if they have been crossed in either direction. There is

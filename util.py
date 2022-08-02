@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """Utility code used in Patrick Mooney's Königsberg.
 
 This program was written by Patrick Mooney. It is copyright 2022. It is
@@ -65,6 +66,7 @@ def flatten_list(l: Iterable) -> Generator[Any, None, None]:
 
 
 def _default_path_formatter(path: bytearray,
+                            path_length: int,
                             path_translation_dict: Dict[int, Hashable],
                             start: Optional[Hashable],
                             node_translation_dict: Optional[Dict[int, Hashable]]) -> str:
@@ -79,11 +81,17 @@ def _default_path_formatter(path: bytearray,
     If either of START or NODE_TRANSLATION_DICT is supplied, the other must also be
     supplied.
 
-    Don't use this function directly; call the no-leading-underscore
-    default_path_formatter(), below.
+    Don't use this function directly; get a callable version from the no-leading-
+    underscore default_path_formatter(), below.
     """
+    # Cython apparently gets confused about the lengths of paths, making this trimming step necessary?
+    # Maybe we should be using NumPy arrays in the first place.
+    path = path[:path_length]
+
     if 0 in path:
-        assert all([p == 0 for p in path[path.find(0):]]), "Zero-bytes can only occur contiguously at the end of a path, not at the beginning or in the middle!"
+        first_loc = path.find(0)
+        for i, byte in enumerate(path, first_loc):
+            assert byte != 0, f"Zero-bytes can only occur contiguously at the end of a path, not at the beginning or in the middle! The byte {byte} in position {i} in path {path}, however, breaks this rule!"
 
     if start:
         ret = node_translation_dict[start] + ': '

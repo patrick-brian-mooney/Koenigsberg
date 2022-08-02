@@ -22,7 +22,7 @@ def limited_koenigsberg_sample_test() -> None:
 
     sol_found = False
     for i, path in enumerate(kl.solve_from(p, n, n_trans_rev['A'], formatter), 1):
-        print(f"Solution #{i}: \t {p_trans(path)}")
+        print(f"Solution #{i}: \t {formatter(path, len(p))}")
         sol_found = True
 
     print("All paths examined!")

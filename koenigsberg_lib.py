@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.9
 # -*- coding: utf-8 -*-
+# cython: language_level=3
 """A program intending to supply all possible paths that successfully traverse an
 undirected graph while passing over each pathway exactly once. Paths are
 considered "traversed" if they have been crossed in either direction. There is
@@ -68,7 +69,7 @@ solutions = set()
 verbosity = 1
 
 # Having to do with saving
-checkpoint_interval = 10            # save occurs when length of path being abandonded as complete
+checkpoint_interval = 10            # save occurs when length of path being abandoned is a multiple of this number
 min_save_interval = 15 * 60         # seconds
 last_save = time.monotonic()
 checkpoint_path = None              # or a Path
@@ -234,17 +235,19 @@ def graph_to_dicts(graph: Dict[Hashable, Iterable[Hashable]]
     return (paths_to_nodes, nodes_to_paths)
 
 
-def log_it(message: str,                        # inline me when we Cythonize
-           minimum_verbosity: int) -> None:
+def log_it(message: str, minimum_verbosity: int) -> None:          # FIXME: inline!
     """Prints MESSAGE, provided that the current verbosity level, specified by
     CURRENT_VERBOSITY_LEVEL, is at least the MINIMUM_VERBOSITY specified for this
     message.
+
+    We're not using the LOGGING module in the stdlib because we're trying to keep
+    this as lightweight as possible, as well as inlining it. It's called a lot.
     """
     if verbosity >= minimum_verbosity:
         print(message)
 
 
-def do_prune_exhausted_paths_list() -> None:
+def do_prune_exhausted_paths_list():
     """Prune the list of exhausted paths so that it consists only of the shortest paths
     that represents the path, in which each bytestring is a list of intersections
     that have been exhaustively traversed and in which having 0x010x020x030x04 in
@@ -384,9 +387,9 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
                 if len(exhausted_paths) > (exhausted_paths_prune_threshold + paths_length_at_last_prune):
                     do_prune_exhausted_paths_list()
             if (num_steps_taken % abandoned_paths_report_interval) == 0:
-                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS)
+                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken, num_steps_taken)}.", VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS)
             else:
-                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken)}.", VERBOSITY_REPORT_ALL_ABANDONED_PATHS)
+                log_it(f"{' ' * len([b for b in steps_taken if b])} abandoned path {output_func(steps_taken, num_steps_taken)}.", VERBOSITY_REPORT_ALL_ABANDONED_PATHS)
             if (num_steps_taken % checkpoint_interval) == 0:
                 do_save()
 
@@ -443,7 +446,7 @@ def print_all_dict_solutions(paths_to_nodes, nodes_to_paths) -> None:
 
     sol_found = False
     for i, path in enumerate(solve_from_all(p, n, formatter), 1):
-        print(f"Solution #{i}: \t {formatter(path)}")
+        print(f"Solution #{i}: \t {formatter(path, len(paths_to_nodes))}")
         sol_found = True
 
     print("All paths examined!")
