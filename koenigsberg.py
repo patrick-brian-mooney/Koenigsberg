@@ -42,7 +42,7 @@ from typing import Union, Optional
 try:
     import pyximport; pyximport.install()
 except ImportError:
-    print("Cython not completely imported! Running in pure-Python mode.")
+    print("Cython not completely imported! Running in pure-Python mode. This may crash if files are named improperly!")
 
 import koenigsberg_lib as kl
 
@@ -162,6 +162,6 @@ def parse_args(args) -> None:
 
 if __name__ == "__main__":
     # parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", "--check", "hexlike.dat"])
-    # parse_args(sys.argv[1:])
-    import cProfile
-    cProfile.run("""parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])""", sort='time')
+    parse_args(sys.argv[1:])
+    #import cProfile
+    #cProfile.run("""parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])""", sort='time')

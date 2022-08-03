@@ -56,6 +56,7 @@ VERBOSITY_REPORT_PROGRESS_ON_SAVE = 1
 VERBOSITY_FRIENDLY_PROGRESS_CHATTER = 2
 VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS = 3
 VERBOSITY_REPORT_ALL_ABANDONED_PATHS = 4
+VERBOSITY_REPORT_EVERYTHING = 5
 
 # Global variables tracking the list of paths that have been explored exhaustively.
 exhausted_paths = None              # or a set(), if we're tracking progress
