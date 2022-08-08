@@ -44,6 +44,8 @@ try:
 except ImportError:
     print("Cython not completely imported! Running in pure-Python mode. This may crash if files are named improperly!")
 
+import util
+
 import koenigsberg_lib as kl
 
 
@@ -57,15 +59,16 @@ def read_graph_file(which_file: Union[str, Path]) -> dict:
     try:
         if not isinstance(which_file, Path):
             which_file = Path(which_file)
-        kl.log_it(f"Opening graph file {which_file.name} ...", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util.log_it(f"Opening graph file {which_file.name} ...", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         if which_file.suffix.lower() != ".graph":
-            kl.log_it("    Warning! File does not have a .graph suffix. Trying anyway.\n", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+            util.log_it("    Warning! File does not have a .graph suffix. Trying anyway.\n",
+                        util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         with open(which_file, mode='rt', encoding='utf-8') as graph_file:
             graph = json.load(graph_file)
-        kl.log_it("File opened, performing sanity checks ...", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
-        kl._sanity_check_graph(graph)
-        kl.log_it("    ... sanity checks passed!\n", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util.log_it("File opened, performing sanity checks ...", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util._sanity_check_graph(graph)
+        util.log_it("    ... sanity checks passed!\n", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         return graph
     except (IOError, json.JSONDecodeError) as errrr:
@@ -84,18 +87,19 @@ def read_map_file(which_file: Union[str, Path]) -> dict:
     try:
         if not isinstance(which_file, Path):
             which_file = Path(which_file)
-        kl.log_it(f"Opening map file {which_file.name} ...", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util.log_it(f"Opening map file {which_file.name} ...", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         if which_file.suffix.lower() != ".map":
-            kl.log_it("    Warning! File does not have a .map suffix. Trying anyway.\n", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+            util.log_it("    Warning! File does not have a .map suffix. Trying anyway.\n",
+                        util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         with open(which_file, mode='rt', encoding='utf-8') as graph_file:
             map = json.load(graph_file)
 
-        kl.log_it("File opened, performing sanity checks ...", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util.log_it("File opened, performing sanity checks ...", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
         assert 'nodes to paths' in map, "File {which_file.name} does not have a 'nodes to paths' key!"
         assert 'paths to nodes' in map, "File {which_file.name} does not have a 'paths to nodes' key!"
-        kl._sanity_check_dicts(map['paths to nodes'], map['nodes to paths'])
-        kl.log_it("    ... sanity checks passed!\n", kl.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
+        util._sanity_check_dicts(map['paths to nodes'], map['nodes to paths'])
+        util.log_it("    ... sanity checks passed!\n", util.VERBOSITY_FRIENDLY_PROGRESS_CHATTER)
 
         return map
     except (IOError, json.JSONDecodeError) as errrr:
@@ -122,14 +126,15 @@ def parse_args(args) -> None:
     parser.add_argument('--checkpoint-file', '--check', '-c', type=Path, help="Path to save and restore checkpointing data to. If unspecified, no checkpoints will be created.")
     parser.add_argument('--checkpoint-length', '--check-len', '-e', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stoppoed and resumed.")
     parser.add_argument('--min-save-interval', '--min-save', '-n', type=int, help="Minimum amount of time, in seconds, between checkpointing saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.")
-    parser.add_argument('--abandoned-report-interval', '--abandoned-report', '-a', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {kl.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
+    parser.add_argument('--abandoned-report-length-interval', '--abandoned-length', '-a', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {util.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
+    parser.add_argument('--abandoned-report-number-interval', '--abandoned-number', '-r', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {util.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
     parser.add_argument('--prune-exhausted-interval', '-p', type=int, help="Threshold for cleaning up the list of paths we've exhausted; doing this more often will make the program run faster when it's not cleaning this list but will make the list-cleaning action happen more often.")
 
     parser.add_argument('--verbose', '-v', action='count', default=1, help="Increase how chatty the program is about the progress it makes. May be specified multiple times.")
     parser.add_argument('--version', '--vers', '--ver', action='store_true', help="Display version information and exit.")
     args = parser.parse_args(args)
 
-    kl.verbosity = args.verbose
+    util.verbosity = args.verbose
     if args.version:
         print(f'\n\nKönigsberg, version {kl.__version__}, by Patrick Mooney')
         print(f"Use {Path(__file__).resolve().name} --help for more help.\n\n")
@@ -143,8 +148,10 @@ def parse_args(args) -> None:
         kl.checkpoint_interval = args.checkpoint_length
     if args.min_save_interval:
         kl.min_save_interval = args.min_save_interval
-    if args.abandoned_report_interval:
-        kl.abandoned_paths_report_interval = args.abandoned_report_interval
+    if args.abandoned_report_length_interval:
+        kl.abandoned_paths_length_report_interval = args.abandoned_report_length_interval
+    if args.abandoned_report_number_interval:
+        kl.abandoned_paths_number_report_interval = args.abandoned_report_number_interval
     if args.prune_exhausted_interval:
         kl.exhausted_paths_prune_threshold = args.prune_exhausted_interval
 
@@ -161,7 +168,8 @@ def parse_args(args) -> None:
 
 
 if __name__ == "__main__":
-    # parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", "--check", "hexlike.dat"])
-    parse_args(sys.argv[1:])
-    #import cProfile
+    #parse_args(["--map", "sample_data/Königsberg.map", "-r", "200", "-vvvvvvv"])
+    # parse_args(sys.argv[1:])
+    import cProfile
     #cProfile.run("""parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])""", sort='time')
+    cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')
