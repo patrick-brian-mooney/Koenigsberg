@@ -1,0 +1,195 @@
+Opening graph file ten_spot_hexlike.graph ...
+File opened, performing sanity checks ...
+    ... sanity checks passed!
+
+All paths examined!
+    No solutions found!
+         3426 function calls (3389 primitive calls) in 2.296 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    2.293    2.293    2.296    2.296 koenigsberg.py:110(parse_args)
+     16/7    0.000    0.000    0.000    0.000 sre_parse.py:175(getwidth)
+      176    0.000    0.000    0.000    0.000 typing.py:848(__subclasscheck__)
+       11    0.000    0.000    0.001    0.000 argparse.py:1404(add_argument)
+      8/6    0.000    0.000    0.000    0.000 sre_parse.py:494(_parse)
+      176    0.000    0.000    0.000    0.000 typing.py:719(__instancecheck__)
+      544    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+       24    0.000    0.000    0.000    0.000 posixpath.py:71(join)
+     14/5    0.000    0.000    0.000    0.000 sre_compile.py:87(_compile)
+       24    0.000    0.000    0.000    0.000 {built-in method posix.stat}
+       11    0.000    0.000    0.001    0.000 argparse.py:170(__init__)
+       27    0.000    0.000    0.001    0.000 re.py:289(_compile)
+       11    0.000    0.000    0.000    0.000 shutil.py:1342(get_terminal_size)
+      176    0.000    0.000    0.000    0.000 {built-in method builtins.issubclass}
+       11    0.000    0.000    0.000    0.000 argparse.py:1545(_get_optional_kwargs)
+        1    0.000    0.000    0.000    0.000 koenigsberg.py:52(read_graph_file)
+        3    0.000    0.000    0.000    0.000 gettext.py:542(find)
+        1    0.000    0.000    2.296    2.296 {built-in method builtins.exec}
+      174    0.000    0.000    0.000    0.000 abc.py:121(__subclasscheck__)
+        6    0.000    0.000    0.000    0.000 gettext.py:211(_expand_lang)
+      174    0.000    0.000    0.000    0.000 {built-in method _abc._abc_subclasscheck}
+       11    0.000    0.000    0.000    0.000 argparse.py:1465(_add_action)
+      258    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        3    0.000    0.000    0.000    0.000 argparse.py:1322(__init__)
+       25    0.000    0.000    0.000    0.000 os.py:674(__getitem__)
+      7/5    0.000    0.000    0.000    0.000 sre_parse.py:436(_parse_sub)
+        5    0.000    0.000    0.001    0.000 sre_compile.py:783(compile)
+       11    0.000    0.000    0.000    0.000 {built-in method posix.get_terminal_size}
+       69    0.000    0.000    0.000    0.000 sre_parse.py:165(__getitem__)
+        1    0.000    0.000    0.000    0.000 {built-in method io.open}
+        5    0.000    0.000    0.000    0.000 sre_compile.py:560(_compile_info)
+       11    0.000    0.000    0.000    0.000 argparse.py:603(_format_args)
+        1    0.000    0.000    0.000    0.000 argparse.py:1882(_parse_known_args)
+  184/170    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        5    0.000    0.000    0.000    0.000 sre_compile.py:622(_code)
+       30    0.000    0.000    0.000    0.000 sre_parse.py:234(__next)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.__build_class__}
+        5    0.000    0.000    0.000    0.000 sre_parse.py:944(parse)
+       37    0.000    0.000    0.000    0.000 argparse.py:1375(register)
+       11    0.000    0.000    0.000    0.000 argparse.py:832(__init__)
+       24    0.000    0.000    0.000    0.000 genericpath.py:16(exists)
+       25    0.000    0.000    0.000    0.000 os.py:754(encode)
+       32    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
+        1    0.000    0.000    0.001    0.001 argparse.py:1705(__init__)
+       47    0.000    0.000    0.000    0.000 {built-in method builtins.min}
+       11    0.000    0.000    0.000    0.000 argparse.py:1654(_add_action)
+        1    0.000    0.000    0.000    0.000 argparse.py:1843(parse_known_args)
+        4    0.000    0.000    0.000    0.000 sre_compile.py:292(_optimize_charset)
+        5    0.000    0.000    0.000    0.000 enum.py:977(__and__)
+        3    0.000    0.000    0.000    0.000 gettext.py:598(translation)
+       11    0.000    0.000    0.001    0.000 argparse.py:2553(_get_formatter)
+       30    0.000    0.000    0.000    0.000 sre_parse.py:161(__len__)
+       72    0.000    0.000    0.000    0.000 {method 'endswith' of 'str' objects}
+        8    0.000    0.000    0.000    0.000 argparse.py:918(__init__)
+       73    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 argparse.py:1632(__init__)
+       25    0.000    0.000    0.001    0.000 re.py:250(compile)
+       23    0.000    0.000    0.000    0.000 argparse.py:1379(_registry_get)
+       49    0.000    0.000    0.000    0.000 {method 'get' of 'dict' objects}
+        2    0.000    0.000    0.000    0.000 argparse.py:2431(_get_values)
+       10    0.000    0.000    0.000    0.000 enum.py:358(__call__)
+       11    0.000    0.000    0.000    0.000 argparse.py:1579(_pop_action_class)
+       22    0.000    0.000    0.000    0.000 sre_parse.py:255(get)
+        1    0.000    0.000    0.000    0.000 decoder.py:343(raw_decode)
+        1    0.000    0.000    2.296    2.296 <string>:1(<module>)
+        2    0.000    0.000    0.000    0.000 argparse.py:1929(take_action)
+      5/4    0.000    0.000    0.000    0.000 sre_compile.py:485(_get_literal_prefix)
+        2    0.000    0.000    0.000    0.000 argparse.py:1950(consume_optional)
+       20    0.000    0.000    0.000    0.000 sre_parse.py:173(append)
+        4    0.000    0.000    0.000    0.000 {method 'find' of 'bytearray' objects}
+       14    0.000    0.000    0.000    0.000 sre_parse.py:287(tell)
+        8    0.000    0.000    0.000    0.000 sre_parse.py:356(_escape)
+       11    0.000    0.000    0.000    0.000 argparse.py:1816(_add_action)
+        5    0.000    0.000    0.000    0.000 sre_parse.py:225(__init__)
+       11    0.000    0.000    0.000    0.000 types.py:171(__get__)
+       11    0.000    0.000    0.000    0.000 argparse.py:1592(_check_conflict)
+        6    0.000    0.000    0.000    0.000 locale.py:386(normalize)
+        1    0.000    0.000    0.000    0.000 __init__.py:274(load)
+        1    0.000    0.000    0.000    0.000 decoder.py:332(decode)
+       24    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        2    0.000    0.000    0.000    0.000 argparse.py:2157(_match_argument)
+        1    0.000    0.000    0.000    0.000 {method 'read' of '_io.TextIOWrapper' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:64(parse_parts)
+       24    0.000    0.000    0.000    0.000 posixpath.py:41(_get_sep)
+        1    0.000    0.000    0.000    0.000 argparse.py:2487(_get_value)
+       25    0.000    0.000    0.000    0.000 {method 'encode' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:702(_from_parts)
+       14    0.000    0.000    0.000    0.000 sre_parse.py:112(__init__)
+        2    0.000    0.000    0.000    0.000 argparse.py:1455(add_argument_group)
+        4    0.000    0.000    0.000    0.000 sre_compile.py:265(_compile_charset)
+       10    0.000    0.000    0.000    0.000 enum.py:670(__new__)
+       11    0.000    0.000    0.000    0.000 {method 'fileno' of '_io.TextIOWrapper' objects}
+       12    0.000    0.000    0.000    0.000 {built-in method builtins.setattr}
+       11    0.000    0.000    0.000    0.000 argparse.py:587(_metavar_formatter)
+       11    0.000    0.000    0.000    0.000 argparse.py:215(__init__)
+       11    0.000    0.000    0.000    0.000 argparse.py:596(format)
+       17    0.000    0.000    0.000    0.000 sre_parse.py:250(match)
+       14    0.000    0.000    0.000    0.000 {built-in method builtins.max}
+        3    0.000    0.000    0.000    0.000 gettext.py:679(dgettext)
+        1    0.000    0.000    0.000    0.000 {method '__exit__' of '_io._IOBase' objects}
+       10    0.000    0.000    0.000    0.000 sre_compile.py:619(isstring)
+        5    0.000    0.000    0.000    0.000 sre_parse.py:928(fix_flags)
+       14    0.000    0.000    0.000    0.000 sre_parse.py:82(groups)
+       43    0.000    0.000    0.000    0.000 {method 'setdefault' of 'dict' objects}
+       15    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+        3    0.000    0.000    0.000    0.000 argparse.py:1583(_get_handler)
+        1    0.000    0.000    0.000    0.000 pathlib.py:682(_parse_args)
+        5    0.000    0.000    0.000    0.000 sre_compile.py:447(_simple)
+        3    0.000    0.000    0.000    0.000 _collections_abc.py:78(_check_methods)
+        2    0.000    0.000    0.000    0.000 argparse.py:2298(_get_nargs_pattern)
+        5    0.000    0.000    0.000    0.000 sre_parse.py:76(__init__)
+        5    0.000    0.000    0.000    0.000 {built-in method _sre.compile}
+       18    0.000    0.000    0.000    0.000 {method 'find' of 'str' objects}
+       22    0.000    0.000    0.000    0.000 {method 'pop' of 'dict' objects}
+        1    0.000    0.000    0.000    0.000 argparse.py:2027(consume_positionals)
+        1    0.000    0.000    0.000    0.000 argparse.py:976(__init__)
+        1    0.000    0.000    0.000    0.000 pathlib.py:1079(__new__)
+        1    0.000    0.000    0.000    0.000 codecs.py:319(decode)
+        1    0.000    0.000    0.000    0.000 __init__.py:299(loads)
+        2    0.000    0.000    0.000    0.000 sre_compile.py:456(_generate_overlap_table)
+       23    0.000    0.000    0.000    0.000 {built-in method builtins.callable}
+       25    0.000    0.000    0.000    0.000 {built-in method posix.fspath}
+        1    0.000    0.000    0.000    0.000 pathlib.py:839(suffix)
+        2    0.000    0.000    0.000    0.000 sre_parse.py:85(opengroup)
+       11    0.000    0.000    0.000    0.000 {method 'lstrip' of 'str' objects}
+        6    0.000    0.000    0.000    0.000 {method 'join' of 'str' objects}
+       11    0.000    0.000    0.000    0.000 enum.py:792(value)
+        3    0.000    0.000    0.000    0.000 gettext.py:756(gettext)
+        4    0.000    0.000    0.000    0.000 {built-in method builtins.getattr}
+        1    0.000    0.000    0.000    0.000 argparse.py:1098(__init__)
+        1    0.000    0.000    0.000    0.000 pathlib.py:742(__str__)
+        3    0.000    0.000    0.000    0.000 os.py:758(decode)
+        3    0.000    0.000    0.000    0.000 argparse.py:2195(_parse_optional)
+        1    0.000    0.000    0.000    0.000 koenigsberg.py:114(ErrorCatchingArgumentParser)
+        1    0.000    0.000    0.000    0.000 argparse.py:1828(_get_positional_actions)
+        3    0.000    0.000    0.000    0.000 _collections_abc.py:760(get)
+        2    0.000    0.000    0.000    0.000 re.py:188(match)
+        7    0.000    0.000    0.000    0.000 sre_compile.py:477(_get_iscased)
+        2    0.000    0.000    0.000    0.000 sre_compile.py:516(_get_charset_prefix)
+        3    0.000    0.000    0.000    0.000 sre_compile.py:81(_combine_flags)
+        2    0.000    0.000    0.000    0.000 pathlib.py:831(name)
+        7    0.000    0.000    0.000    0.000 {method 'lower' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 sre_parse.py:97(closegroup)
+        2    0.000    0.000    0.000    0.000 _collections_abc.py:262(__subclasshook__)
+        1    0.000    0.000    0.000    0.000 codecs.py:309(__init__)
+        2    0.000    0.000    0.000    0.000 {built-in method sys.intern}
+        4    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 argparse.py:1836(parse_args)
+        1    0.000    0.000    0.000    0.000 argparse.py:1075(__init__)
+        5    0.000    0.000    0.000    0.000 sre_parse.py:169(__setitem__)
+        1    0.000    0.000    0.000    0.000 pathlib.py:725(_format_parsed_parts)
+        7    0.000    0.000    0.000    0.000 {method 'extend' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:752(__fspath__)
+        1    0.000    0.000    0.000    0.000 argparse.py:953(__init__)
+        3    0.000    0.000    0.000    0.000 {method 'decode' of 'bytes' objects}
+        1    0.000    0.000    0.000    0.000 typing.py:271(inner)
+        1    0.000    0.000    0.000    0.000 {built-in method _codecs.utf_8_decode}
+        1    0.000    0.000    0.000    0.000 argparse.py:1089(__call__)
+        4    0.000    0.000    0.000    0.000 sre_parse.py:163(__delitem__)
+        5    0.000    0.000    0.000    0.000 {method 'items' of 'dict' objects}
+        2    0.000    0.000    0.000    0.000 argparse.py:2056(<listcomp>)
+        1    0.000    0.000    0.000    0.000 argparse.py:1829(<listcomp>)
+        7    0.000    0.000    0.000    0.000 {method 'reverse' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 _collections_abc.py:98(__subclasshook__)
+        1    0.000    0.000    0.000    0.000 argparse.py:2179(_match_arguments_partial)
+        2    0.000    0.000    0.000    0.000 {method 'remove' of 'list' objects}
+        3    0.000    0.000    0.000    0.000 argparse.py:625(<listcomp>)
+        1    0.000    0.000    0.000    0.000 argparse.py:947(__call__)
+        4    0.000    0.000    0.000    0.000 {method 'add' of 'set' objects}
+        2    0.000    0.000    0.000    0.000 {method 'group' of 're.Match' objects}
+        4    0.000    0.000    0.000    0.000 {built-in method builtins.ord}
+        1    0.000    0.000    0.000    0.000 pathlib.py:303(splitroot)
+        1    0.000    0.000    0.000    0.000 {method 'rfind' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 codecs.py:260(__init__)
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        1    0.000    0.000    0.000    0.000 pathlib.py:1089(_init)
+        1    0.000    0.000    0.000    0.000 argparse.py:1307(__init__)
+        1    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x94bdc0}
+        1    0.000    0.000    0.000    0.000 argparse.py:2513(_check_value)
+        2    0.000    0.000    0.000    0.000 {method 'end' of 're.Match' objects}
+        1    0.000    0.000    0.000    0.000 argparse.py:2480(<listcomp>)
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.iter}
+
+

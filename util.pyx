@@ -45,9 +45,9 @@ def flatten_list(l: Iterable) -> Generator[Any, None, None]:
 
 def _default_path_formatter(path: bytearray,
                             path_length: int,
-                            path_translation_dict: Dict[int, Hashable],
-                            start: Optional[Hashable],
-                            node_translation_dict: Optional[Dict[int, Hashable]]) -> str:
+                            path_translation_dict: dict,
+                            start: Hashable, 
+                            node_translation_dict: dict) -> str:
     """Takes PATH, a bytearray, and uses PATH_TRANSLATION_DICT to turn it into a
     human-readable form. Optionally, also uses START and NODE_TRANSLATION_DICT to
     indicate which node begins the path.
@@ -62,12 +62,13 @@ def _default_path_formatter(path: bytearray,
     Don't use this function directly; get a callable version from the no-leading-
     underscore default_path_formatter(), below.
     """
-    path = path[:path_length]
-
+    if start: assert node_translation_dict, f"ERROR! If START is specified, NODE_TRANSLATION_DICT must also be specified!"
+    if node_translation_dict: assert start, f"ERROR! If NODE_TRANSLATION_DICT is specified, START must also be specified!"
+    
     if 0 in path:
         first_loc = path.find(0)
-        for i, byte in enumerate(path, first_loc):
-            assert byte != 0, f"Zero-bytes can only occur contiguously at the end of a path, not at the beginning or in the middle! The byte {byte} in position {i} in path {path}, however, breaks this rule!"
+        for i, byte in enumerate(path[first_loc:], first_loc):
+            assert byte == 0, f"Zero-bytes can only occur contiguously at the end of a path, not at the beginning or in the middle! The byte {byte} in position {i} in path {path}, however, breaks this rule!"
 
     if start:
         ret = node_translation_dict[start] + ': '
@@ -79,8 +80,8 @@ def _default_path_formatter(path: bytearray,
 
 
 def default_path_formatter(path_translation_dict: Dict[int, Hashable], *,
-                           start: Optional[Hashable] = None,
-                           node_translation_dict: Optional[Dict[int, Hashable]] = None) -> Callable:
+                           start: Optional[Hashable] = "",
+                           node_translation_dict: Optional[Dict[int, Hashable]] = dict()) -> Callable:
     """'Fixes' the three relevant arguments into a version of the above
     _default_path_formatter() that can be called with just PATH and PATH_LENGTH.
     Useful for passing into functions in the main Königsberg code that expect to
@@ -249,7 +250,7 @@ def graph_to_dicts(graph: Dict[Hashable, Iterable[Hashable]]
     return (paths_to_nodes, nodes_to_paths)
 
 
-def log_it(message: str, minimum_verbosity: int) -> None:          # FIXME: inline!
+cpdef inline void log_it(str message, int minimum_verbosity):
     """Prints MESSAGE, provided that the current verbosity level, specified by
     CURRENT_VERBOSITY_LEVEL, is at least the MINIMUM_VERBOSITY specified for this
     message.
@@ -269,6 +270,7 @@ def quick_test_harness() -> None:
     t.dense_polygon_sample_test(8)
     import sys
     sys.exit()
+
 
 if __name__ == "__main__":
     # quick_test_harness()              # Comment me out when not using

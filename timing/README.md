@@ -10,8 +10,11 @@ The standard invocation of the script for timing purposes is something very clos
 The pure-Python version of the program<!--, as it occurs in [commit 0a329421d5675de3606f9079cf0e9e32102074d7](https://github.com/patrick-brian-mooney/IF-utils/commit/0a329421d5675de3606f9079cf0e9e32102074d7)-->. Took 24.846 seconds to run the sample probelm.
 
 ## `simply-compiled/`
-The pure-Python version of the program, using Cython to compile `koenigsberg_lib` and `util` as-is, with no other changes. Ran the same test in 7.622 seconds.
+The pure-Python version of the program, using Cython to compile `koenigsberg_lib` and `util` as-is, with no other changes. Ran the same test in 7.622 seconds, reducing the time required by the previous test by nearly 70%.
+
+## `minimal-cdef/`
+First steps toward converting some pure-Python functions to C-style `cdef`- and `cpdef`-defined functions.  Ran the same test in 2.296 seconds, shaving off 70% of the remaining time required for the test.
 
 <p>&nbsp;</p>
-<footer>This file last updated 13 Jul 2022.</footer>
+<footer>This file last updated 9 Aug 2022.</footer>
 

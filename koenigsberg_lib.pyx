@@ -75,7 +75,7 @@ exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
 run_start = time.monotonic()
 
 
-def do_prune_exhausted_paths_list():
+cdef do_prune_exhausted_paths_list():
     """Prune the list of exhausted paths so that it consists only of the shortest paths
     that represents the path, in which each bytestring is a list of intersections
     that have been exhaustively traversed and in which having 0x010x020x030x04 in
@@ -155,7 +155,7 @@ def do_load_progress() -> None:
         print("Starting from scratch.")
 
 
-def path_is_pruned(path: bytearray) -> bool:
+cdef bint path_is_pruned(bytearray path):
     """Return True if this is a path that we have already explored, e.g. in a previous
     run.
     """

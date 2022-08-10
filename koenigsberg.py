@@ -155,7 +155,7 @@ def parse_args(args) -> None:
     if args.prune_exhausted_interval:
         kl.exhausted_paths_prune_threshold = args.prune_exhausted_interval
 
-    assert not (args.graph and args.map), "ERROR! Only one of --graph or --map must be specified."
+    assert not (args.graph and args.map), "ERROR! Only one of --graph or --map may be specified."
     if args.graph:
         graph = read_graph_file(args.graph)
         kl.print_all_graph_solutions(graph)
