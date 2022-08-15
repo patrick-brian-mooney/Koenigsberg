@@ -7,13 +7,18 @@ All timing runs were performed on the same computer using Python 3.9 under x64 L
 The standard invocation of the script for timing purposes is something very close to `./koenigsberg.py 2>&1 | tee timing/pre-optimization/pre-optimization.txt`, with the filenames adjusted as necessary. The internal call to `cProfile` looks like `cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')`.
 
 ## `pre-optimization/`
-The pure-Python version of the program<!--, as it occurs in [commit 0a329421d5675de3606f9079cf0e9e32102074d7](https://github.com/patrick-brian-mooney/IF-utils/commit/0a329421d5675de3606f9079cf0e9e32102074d7)-->. Took 24.846 seconds to run the sample probelm.
+The pure-Python version of the program<!--, as it occurs in [commit 0a329421d5675de3606f9079cf0e9e32102074d7](https://github.com/patrick-brian-mooney/IF-utils/commit/0a329421d5675de3606f9079cf0e9e32102074d7)-->. Took 24.846 seconds to run the sample problem.
 
 ## `simply-compiled/`
 The pure-Python version of the program, using Cython to compile `koenigsberg_lib` and `util` as-is, with no other changes. Ran the same test in 7.622 seconds, reducing the time required by the previous test by nearly 70%.
 
 ## `minimal-cdef/`
 First steps toward converting some pure-Python functions to C-style `cdef`- and `cpdef`-defined functions.  Ran the same test in 2.296 seconds, shaving off 70% of the remaining time required for the test.
+
+## `further-cdef/`
+Defining data types for additional global and local variables. Ran the same test in 1.847 seconds, shaving off nearly another 20% from the running time. 
+
+
 
 <p>&nbsp;</p>
 <footer>This file last updated 9 Aug 2022.</footer>
