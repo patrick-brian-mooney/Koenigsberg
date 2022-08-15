@@ -15,7 +15,8 @@ import traceback
 
 from typing import Any, Callable, Dict, Generator, Hashable, Iterable, Optional, Tuple, Union, Type
 
-# First, verbosity levels. Make these ENUMs when we Cythonize?
+
+# First, verbosity levels.
 VERBOSITY_MINIMAL = 0
 VERBOSITY_REPORT_PROGRESS_ON_SAVE = 1
 VERBOSITY_FRIENDLY_PROGRESS_CHATTER = 2
@@ -25,7 +26,7 @@ VERBOSITY_REPORT_EVERYTHING = 5
 
 
 # Global variables that control message printing
-verbosity = 1
+cdef long verbosity = 1
 
 
 def flatten_list(l: Iterable) -> Generator[Any, None, None]:

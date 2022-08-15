@@ -50,29 +50,32 @@ sample_data = script_home / 'sample_data'
 
 # Global variables tracking the list of paths that have been explored exhaustively.
 exhausted_paths = None              # or a set(), if we're tracking progress
-paths_length_at_last_prune = 0
-total_paths_exhausted_num = 0
+cdef long paths_length_at_last_prune = 0
+cdef long total_paths_exhausted_num = 0
 
 # Global variables tracking solutions found.
-solutions = set()
+cdef set solutions = set()
 
 # Global variables that can be set with command_line parameters follow
 
 # Having to do with saving
-checkpoint_interval = 10            # save occurs when length of path being abandoned is a multiple of this number
-min_save_interval = 15 * 60         # seconds
-last_save = time.monotonic()
-checkpoint_path = None              # or a Path
+cdef long checkpoint_interval = 10              # save occurs when length of path being abandoned is a multiple of this number
+cdef long min_save_interval = 15 * 60           # seconds
+cdef double last_save = time.monotonic()
+checkpoint_path = None                          # or a Path
 
 # Having to do with how often abandoned paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
-abandoned_paths_length_report_interval = 8
-abandoned_paths_number_report_interval = 100000
+cdef long abandoned_paths_length_report_interval = 8
+cdef long abandoned_paths_number_report_interval = 100000
 
 # Having to do with how often the list of exhausted paths is pruned.
-exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
+cdef long exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
+
+# The function used to convert a bytearray into a printed output path
+output_func = lambda the_bytes, *args: ''.join(chr(o) for o in the_bytes)
 
 # Other globals
-run_start = time.monotonic()
+cdef double run_start = time.monotonic()
 
 
 cdef do_prune_exhausted_paths_list():
@@ -87,6 +90,10 @@ cdef do_prune_exhausted_paths_list():
     --prune-exhausted-interval switch, which adjusts the threshold of how many new
     paths can be added to the list before the list is pruned.
     """
+    cdef bytearray p
+    cdef set pruned_paths_list
+    cdef long length
+
     global exhausted_paths, paths_length_at_last_prune
 
     if not exhausted_paths:
@@ -129,7 +136,7 @@ def do_save(even_if_not_time: bool = False,
     with bz2.open(checkpoint_path, mode='wb') as checkpoint_file:
         pickle.dump(data, checkpoint_file, protocol=-1)
 
-    util.log_it(f"Progress saved to {checkpoint_path.name}! {len(solutions)} solutions found and {total_paths_exhausted_num} paths exhaused in {data['total_time'] / 60:.5} minutes.",
+    util.log_it(f"Progress saved to {checkpoint_path.name}! {len(solutions)} solutions found and {total_paths_exhausted_num} paths exhaused in {data['total_time'] / 60:.10} minutes.",
                 util.VERBOSITY_REPORT_PROGRESS_ON_SAVE)
     last_save = time.monotonic()
 
@@ -169,44 +176,43 @@ cdef bint path_is_pruned(bytearray path):
     return False
 
 
-def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
-                nodes_to_paths: Dict[int, Tuple[int]],
-                start_from: int,
-                steps_taken: bytearray,
-                num_steps_taken: int,
-                output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+cdef void _solve_from(dict paths_to_nodes,       # Dict[int, Tuple[int]]
+                      dict nodes_to_paths,       # Dict[int, Tuple[int]]
+                      int start_from,
+                      bytearray steps_taken,
+                      int num_steps_taken):
     """Recursively calls itself to solve the map described by PATHS_TO_NODES and
     NODES_TO_PATHS, starting from START_FROM, having already taken NUM_STEPS_TAKEN
     steps, which are recorded in the STEPS_TAKEN array. STEPS_TAKEN must be
     preallocated (and filled with zeroes) and is shared by each recursive invocation
     of this function; it's a scratch space that gets passed around, and copies of it
-    are yielded when they turn into successful results.
+    are formatted and printed when they turn into successful results.
 
-    Yields nothing if there are no successful results.
-
-    OUTPUT_FUNC must be a callable function that takes one parameter -- a bytearray
-    that is the STEPS_TAKEN array -- and transforms it into a printed string. Use,
-    e.g., util.default_path_formatter.
-
+    Prints nothing if there are no successful results.
     Makes no attempts to verify that the data is sane -- call _sanity_check_dicts()
-    for that.
+    before beginning for that.
+
+    This function is not meant to be end-user accessible; use a friendly front-end,
+    below, to get the ball rolling. Rather than friendly and accessible from outside
+    this module, this function is intended to be *fast*.
     """
+    global output_func
     global exhausted_paths, solutions
     global exhausted_paths_prune_threshold, paths_length_at_last_prune, total_paths_exhausted_num
 
     if num_steps_taken == len(paths_to_nodes):                  # if we've hit every path ... we have a solution!
         sol = bytes([s for s in steps_taken if s])              # create a copy of the current path
         solutions.add(sol)                                      # add it to the set of solutions
-        yield bytes(sol)                                        # emit it
+        print(output_func(steps_taken, num_steps_taken))        # print it
 
-    else:                                                       # We have not explored every possible path from this point.
+    else:                                                       # We have not explored every possible path on this journey.
         next_steps = [p for p in nodes_to_paths[start_from] if p not in steps_taken]
         if next_steps:
             for next_path in sorted(next_steps):
                 next_loc = [p for p in paths_to_nodes[next_path] if p != start_from][0]
                 steps_taken[num_steps_taken] = next_path        # The step we're taking right now.
                 if (not exhausted_paths) or (not path_is_pruned(steps_taken)):
-                    yield from _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken, output_func)
+                    _solve_from(paths_to_nodes, nodes_to_paths, next_loc, steps_taken, 1+num_steps_taken)
                 steps_taken[num_steps_taken] = 0                # Free up the space for the step we just took
 
         else:
@@ -234,20 +240,18 @@ def _solve_from(paths_to_nodes: Dict[int, Tuple[int]],
 
 def solve_from(paths_to_nodes: Dict[int, Tuple[int]],
                nodes_to_paths: Dict[int, Tuple[int]],
-               start_from: int,
-               output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+               start_from: int) -> None:
     """Friendly interface to _solve_from(), above. It does not require pre-allocation
     of a bytearray and it takes fewer parameters because it does not call itself
     recursively.
     """
     steps_taken = bytearray([0] * len(paths_to_nodes))
-    yield from _solve_from(paths_to_nodes, nodes_to_paths, start_from, steps_taken, 0, output_func)
+    _solve_from(paths_to_nodes, nodes_to_paths, start_from, steps_taken, 0)
 
 
 def solve_from_multiple(paths_to_nodes: Dict[int, Tuple[int]],
                         nodes_to_paths: Dict[int, Tuple[int]],
-                        starts_from: Iterable[int],
-                        output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+                        starts_from: Iterable[int]) -> None:
     """Convenience function: repeatedly solve the map described by PATHS_TO_NODES and
     by NODES_TO_PATHS by starting from all of the paths in STARTS_FROM, an iterable
     of starting locations.
@@ -258,17 +262,16 @@ def solve_from_multiple(paths_to_nodes: Dict[int, Tuple[int]],
     """
     steps_taken = bytearray([0] * len(paths_to_nodes))
     for start in starts_from:
-        yield from _solve_from(paths_to_nodes, nodes_to_paths, start, steps_taken, 0, output_func)
+        _solve_from(paths_to_nodes, nodes_to_paths, start, steps_taken, 0)
 
 
 def solve_from_all(paths_to_nodes: Dict[int, Tuple[int]],
-                   nodes_to_paths: Dict[int, Tuple[int]],
-                   output_func: Callable) -> Generator[Iterable[Tuple[Hashable]], None, None]:
+                   nodes_to_paths: Dict[int, Tuple[int]]) -> None:
     """Convenience function: solves the PATHS_TO_NODES/NODES_TO_PATHS maps passed in,
     in the same way as solve_from_multiple(), but from every possible starting
     point, not just selected ones.
     """
-    yield from solve_from_multiple(paths_to_nodes, nodes_to_paths, nodes_to_paths.keys(), output_func)
+    solve_from_multiple(paths_to_nodes, nodes_to_paths, nodes_to_paths.keys())
 
 
 def print_all_dict_solutions(paths_to_nodes, nodes_to_paths) -> None:
@@ -279,16 +282,15 @@ def print_all_dict_solutions(paths_to_nodes, nodes_to_paths) -> None:
     Given those parameters, it normalizes the dictionaries, finds all solutions, and
     prints them using the default solution formatter.
     """
-    p, n, p_trans, n_trans, p_trans_rev, n_trans_rev = util.normalize_dicts(paths_to_nodes, nodes_to_paths)
-    formatter = util.default_path_formatter(p_trans)
+    global output_func
 
-    sol_found = False
-    for i, path in enumerate(solve_from_all(p, n, formatter), 1):
-        print(f"Solution #{i}: \t {formatter(path, len(paths_to_nodes))}")
-        sol_found = True
+    p, n, p_trans, n_trans, p_trans_rev, n_trans_rev = util.normalize_dicts(paths_to_nodes, nodes_to_paths)
+    output_func = util.default_path_formatter(p_trans)
+
+    solve_from_all(p, n)
 
     print("All paths examined!")
-    if not sol_found:
+    if not solutions:
         print("    No solutions found!")
 
 
@@ -316,6 +318,7 @@ def print_all_graph_solutions(graph: dict) -> None:
 
 
 if __name__ == "__main__":
+    # test harness
     import koenigsberg
     koenigsberg.parse_args(['--graph', '/tmp/hello.json', '-v', '-v', '-v', '-v'])
 

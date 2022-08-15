@@ -18,8 +18,11 @@ First steps toward converting some pure-Python functions to C-style `cdef`- and 
 ## `further-cdef/`
 Defining data types for additional global and local variables. Ran the same test in 1.847 seconds, shaving off nearly another 20% from the running time. 
 
+## `removing-yields/`
+Refactoring to eliminate the code's structural dependence on the Python `yield` statement, which cannot be compiled by Cython because it does not correspond to a C statement. Ran the same test in 1.277 seconds, shaving off nearly another 31% from the running time on the test. The program is now nearly 20x faster than it was at the beginning.
+
 
 
 <p>&nbsp;</p>
-<footer>This file last updated 9 Aug 2022.</footer>
+<footer>This file last updated 15 Aug 2022.</footer>
 

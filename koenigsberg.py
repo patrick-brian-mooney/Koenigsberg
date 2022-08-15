@@ -156,6 +156,7 @@ def parse_args(args) -> None:
         kl.exhausted_paths_prune_threshold = args.prune_exhausted_interval
 
     assert not (args.graph and args.map), "ERROR! Only one of --graph or --map may be specified."
+    assert args.graph or args.map, "ERROR! One of --graph or --map must be specified."
     if args.graph:
         graph = read_graph_file(args.graph)
         kl.print_all_graph_solutions(graph)
@@ -171,5 +172,4 @@ if __name__ == "__main__":
     #parse_args(["--map", "sample_data/Königsberg.map", "-r", "200", "-vvvvvvv"])
     # parse_args(sys.argv[1:])
     import cProfile
-    #cProfile.run("""parse_args(['--graph', 'sample_data/pentagon.graph', '--check', 'pentagon.dat'])""", sort='time')
     cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')
