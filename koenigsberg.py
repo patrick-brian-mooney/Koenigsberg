@@ -119,12 +119,12 @@ def parse_args(args) -> None:
                 raise Exception(f'Exiting with status {status} because of a fatal error:\n{message}')
             exit(status)
 
-    parser = ErrorCatchingArgumentParser(description=__doc__, prog="Königsberg", formatter_class=argparse.RawTextHelpFormatter)
+    parser = ErrorCatchingArgumentParser(description=__doc__, prog="Königsberg", formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--graph', '-g', type=Path, help="An appropriately formatted .graph file to solve exhaustively")
     parser.add_argument('--map', '-m', type=Path, help="An appropriately formatted .map file to solve exhaustively")
 
     parser.add_argument('--checkpoint-file', '--check', '-c', type=Path, help="Path to save and restore checkpointing data to. If unspecified, no checkpoints will be created.")
-    parser.add_argument('--checkpoint-length', '--check-len', '-e', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stoppoed and resumed.")
+    parser.add_argument('--checkpoint-length', '--check-len', '-e', type=int, help="Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stopped and resumed.")
     parser.add_argument('--min-save-interval', '--min-save', '-n', type=int, help="Minimum amount of time, in seconds, between checkpointing saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.")
     parser.add_argument('--abandoned-report-length-interval', '--abandoned-length', '-a', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {util.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
     parser.add_argument('--abandoned-report-number-interval', '--abandoned-number', '-r', type=int, help=f"Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level {util.VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS}.")
@@ -170,6 +170,6 @@ def parse_args(args) -> None:
 
 if __name__ == "__main__":
     #parse_args(["--map", "sample_data/Königsberg.map", "-r", "200", "-vvvvvvv"])
-    # parse_args(sys.argv[1:])
-    import cProfile
-    cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')
+    parse_args(sys.argv[1:])
+    # import cProfile
+    # cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')
