@@ -48,7 +48,7 @@ def _get_wrapped_lines(paragraph: str,
 def print_wrapped_lines(paragraph: str, 
                         indent_width: int = 0, 
                         enclosing_width = -1) -> None:
-    """Convenience wrapper for that prints the result of _get_wrapped_lines() to
+    """Convenience wrapper that prints the result of _get_wrapped_lines() to
     stdout.
     """
     for l in _get_wrapped_lines(paragraph, indent_width, enclosing_width):
@@ -124,7 +124,39 @@ def yes_or_no(prompt: str) -> bool:
 
 
 def get_map() -> Dict[str, Dict[str, Iterable[str]]]:
-    return dict()                                               #FIXME!
+    """Repeatedly ask the user to define which nodes are connected by each new pathway.
+    Return the assembled dictionaries to the calling function."""
+    nodes_to_paths, paths_to_nodes = collections.defaultdict(list), collections.defaultdict(list)
+    done = False
+    print('\n\n\nFirst pathway ...')
+
+    while not done:
+        name = input("What is the name of the pathway? ").strip()
+        if name in paths_to_nodes:
+            print(f"ERROR! A path with name {name} already exists!")
+            continue
+
+        valid = False
+        while not valid:
+            endpoints = input(f"Enter the (semicolon-separated) names of the nodes connected by the pathway '{name}': ").strip()
+            try:
+                beginning, end = [p.strip() for p in endpoints.split(';')]
+                valid = True
+            except (ValueError,):
+                print("Must enter exactly two semicolon-separated endpoint nodes!")
+                continue
+
+        paths_to_nodes[name] = [beginning, end]
+        nodes_to_paths[beginning].append(name)
+        nodes_to_paths[end].append(name)            
+
+        done = not yes_or_no("Add another pathway?")
+        if not done:
+            print('\n\nNext pathway ...')
+        
+    return {'nodes to paths': dict(nodes_to_paths),
+            'paths to nodes': dict(paths_to_nodes)
+            }
 
 
 def get_graph() -> Dict[str, Iterable[str]]:
