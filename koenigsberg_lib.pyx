@@ -78,7 +78,7 @@ output_func = lambda the_bytes, *args: ''.join(chr(o) for o in the_bytes)
 cdef double run_start = time.monotonic()
 
 
-cdef do_prune_exhausted_paths_list():
+cdef void do_prune_exhausted_paths_list() except *:
     """Prune the list of exhausted paths so that it consists only of the shortest paths
     that represents the path, in which each bytestring is a list of intersections
     that have been exhaustively traversed and in which having 0x010x020x030x04 in
@@ -90,7 +90,7 @@ cdef do_prune_exhausted_paths_list():
     --prune-exhausted-interval switch, which adjusts the threshold of how many new
     paths can be added to the list before the list is pruned.
     """
-    cdef bytearray p
+    cdef bytes p
     cdef set pruned_paths_list
     cdef long length
 
@@ -102,7 +102,7 @@ cdef do_prune_exhausted_paths_list():
     pruned_paths_list = set()
     for p in sorted(exhausted_paths, key=len):
         for length in range(1+len(p)):
-            if p[:length] in pruned_paths_list:
+            if bytes(p[:length]) in pruned_paths_list:
                 break
         else:
             pruned_paths_list.add(p)
@@ -162,7 +162,7 @@ def do_load_progress() -> None:
         print("Starting from scratch.")
 
 
-cdef bint path_is_pruned(bytearray path):
+cdef bint path_is_pruned(bytearray path) except? 127:        # 127 should never be a value that the function returns
     """Return True if this is a path that we have already explored, e.g. in a previous
     run.
     """
@@ -180,7 +180,7 @@ cdef void _solve_from(dict paths_to_nodes,       # Dict[int, Tuple[int]]
                       dict nodes_to_paths,       # Dict[int, Tuple[int]]
                       int start_from,
                       bytearray steps_taken,
-                      int num_steps_taken):
+                      int num_steps_taken) except *:
     """Recursively calls itself to solve the map described by PATHS_TO_NODES and
     NODES_TO_PATHS, starting from START_FROM, having already taken NUM_STEPS_TAKEN
     steps, which are recorded in the STEPS_TAKEN array. STEPS_TAKEN must be

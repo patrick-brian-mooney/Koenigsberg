@@ -251,7 +251,7 @@ def graph_to_dicts(graph: Dict[Hashable, Iterable[Hashable]]
     return (paths_to_nodes, nodes_to_paths)
 
 
-cpdef inline void log_it(str message, int minimum_verbosity):
+cpdef inline void log_it(str message, int minimum_verbosity) except *:
     """Prints MESSAGE, provided that the current verbosity level, specified by
     CURRENT_VERBOSITY_LEVEL, is at least the MINIMUM_VERBOSITY specified for this
     message.
