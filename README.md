@@ -1,6 +1,16 @@
 # Koenigsberg (alpha version)
 
-Graph analysis tool by <a rel="author" href="https://patrickbrianmooney.nfshost.com/~patrick/">Patrick Mooney</a>
+Graph analysis tool by <a rel="author" href="https://patrickbrianmooney.nfshost.com/~patrick/">Patrick Mooney</a>.
+
+## Installation
+
+    git clone patrick-brian-mooney/Koenigsberg
+    cd Koenigsberg
+    pip install -r requirements.txt
+
+`pip` will then install Cython, a recent version of which is currently the only requirement. (Older versions of Cython may not work; recent versions are required because they fix a problem with correctly determining the length of bytearrays.) 
+
+If `pip` is not already installed properly on your system, you may need to [install pip](https://pip.pypa.io/en/stable/installation/) first.
 
 ## Overview
 
@@ -11,40 +21,50 @@ https://www.maa.org/press/periodicals/convergence/leonard-eulers-solution-to-the
 
 ## Quick reference
 
-<code><pre>
-  -h, --help
-                        show this help message and exit
+`-h, --help`
 
-  --graph GRAPH, -g GRAPH
-                        An appropriately formatted .graph file to solve exhaustively
+Show a help message and exit.
 
-  --map MAP, -m MAP
-                        An appropriately formatted .map file to solve exhaustively
+`--graph GRAPH, -g GRAPH`
 
-  --checkpoint-file CHECKPOINT_FILE, --check CHECKPOINT_FILE, -c CHECKPOINT_FILE
-                        Path to save and restore checkpointing data to. If unspecified, no checkpoints will be created.
+An appropriately formatted .graph file to solve exhaustively.
 
-  --checkpoint-length CHECKPOINT_LENGTH, --check-len CHECKPOINT_LENGTH, -e CHECKPOINT_LENGTH
-                        Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stopped and resumed.
+`--map MAP, -m MAP`
 
-  --min-save-interval MIN_SAVE_INTERVAL, --min-save MIN_SAVE_INTERVAL, -n MIN_SAVE_INTERVAL
-                        Minimum amount of time, in seconds, between checkpointing saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.
+An appropriately formatted .map file to solve exhaustively.
 
-  --abandoned-report-length-interval ABANDONED_REPORT_LENGTH_INTERVAL, --abandoned-length ABANDONED_REPORT_LENGTH_INTERVAL, -a ABANDONED_REPORT_LENGTH_INTERVAL
-                        Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level 3.
+`--checkpoint-file CHECKPOINT_FILE, --check CHECKPOINT_FILE, -c CHECKPOINT_FILE`
 
-  --abandoned-report-number-interval ABANDONED_REPORT_NUMBER_INTERVAL, --abandoned-number ABANDONED_REPORT_NUMBER_INTERVAL, -r ABANDONED_REPORT_NUMBER_INTERVAL
-                        Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level 3.
+Path to save and restore checkpointing data to. If unspecified, no checkpoints will be created.
 
-  --prune-exhausted-interval PRUNE_EXHAUSTED_INTERVAL, -p PRUNE_EXHAUSTED_INTERVAL
-                        Threshold for cleaning up the list of paths we've exhausted; doing this more often will make the program run faster when it's not cleaning this list but will make the list-cleaning action happen more often.
+`--checkpoint-length CHECKPOINT_LENGTH, --check-len CHECKPOINT_LENGTH, -e CHECKPOINT_LENGTH`
 
-  --verbose, -v
-                        Increase how chatty the program is about the progress it makes. May be specified multiple times.
+Lengths of paths that cause a checkpoint to be created; larger numbers lead to less frequent saves. This number must not be changed during a run, even if the run is stopped and resumed.
 
-  --version, --vers, --ver
-                        Display version information and exit.
-</pre></code>
+`--min-save-interval MIN_SAVE_INTERVAL, --min-save MIN_SAVE_INTERVAL, -n MIN_SAVE_INTERVAL`
+
+Minimum amount of time, in seconds, between checkpointing saves. Increasing this makes the program slightly faster but means you'll lose more progress if it's interrupted.
+
+`--abandoned-report-length-interval ABANDONED_REPORT_LENGTH_INTERVAL, --abandoned-length ABANDONED_REPORT_LENGTH_INTERVAL, -a ABANDONED_REPORT_LENGTH_INTERVAL`
+
+Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level 3.
+
+`--abandoned-report-number-interval ABANDONED_REPORT_NUMBER_INTERVAL, --abandoned-number ABANDONED_REPORT_NUMBER_INTERVAL, -r ABANDONED_REPORT_NUMBER_INTERVAL`
+
+Length of paths that cause a status message to be emitted when the path is abandoned at verbosity level 3.
+
+`--prune-exhausted-interval PRUNE_EXHAUSTED_INTERVAL, -p PRUNE_EXHAUSTED_INTERVAL`
+
+Threshold for cleaning up the list of paths we've exhausted; doing this more often will make the program run faster when it's not cleaning this list but will make the list-cleaning action happen more often.
+
+`--verbose, -v`
+
+Increase how chatty the program is about the progress it makes. May be specified multiple times.
+
+`--version, --vers, --ver`
+
+Display version information and exit.
+
 
 ## More information
 

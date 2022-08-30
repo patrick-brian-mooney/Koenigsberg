@@ -6,3 +6,4 @@ __pycache__
 *.dat
 *.bak
 sample_data/*progress
+docs/img/working/
