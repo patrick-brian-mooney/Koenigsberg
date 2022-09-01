@@ -78,7 +78,7 @@ def read_graph_file(which_file: Union[str, Path]) -> dict:
 
 def read_map_file(which_file: Union[str, Path]) -> dict:
     """Reads a JSON file containing a dictionary that encapsulates both a
-    nodes- paths dict and a paths->nodes dict under the names expected by
+    nodes->paths dict and a paths->nodes dict under the names expected by
     print_all_dict_solutions(), above. Performs some basic sanity checks.
 
     These map files must be UTF-8 encoded JSON files. By convention, they have a
@@ -137,7 +137,8 @@ def parse_args(args) -> None:
     util.verbosity = args.verbose
     if args.version:
         print(f'\n\nKönigsberg, version {kl.__version__}, by Patrick Mooney')
-        print(f"Use {Path(__file__).resolve().name} --help for more help.\n\n")
+        print(f"    ... running under Python {sys.version}.")
+        print(f"\nUse {Path(__file__).resolve().name} --help for more help.\n\n")
         sys.exit(0)
 
     if args.checkpoint_file:
@@ -172,4 +173,4 @@ if __name__ == "__main__":
     #parse_args(["--map", "sample_data/Königsberg.map", "-r", "200", "-vvvvvvv"])
     parse_args(sys.argv[1:])
     # import cProfile
-    # cProfile.run("""parse_args(["--graph", "sample_data/ten_spot_hexlike.graph", '-v'])""", sort='time')
+    # cProfile.run("""parse_args(["--graph", "sample_data/cealdhame.graph", "-c", "sample_data/cealdhame.progress", "-e", "10", "-n" "8000"])""", sort='time')

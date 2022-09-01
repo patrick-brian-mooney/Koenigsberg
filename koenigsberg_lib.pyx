@@ -59,23 +59,38 @@ cdef set solutions = set()
 # Global variables that can be set with command_line parameters follow
 
 # Having to do with saving
-cdef long checkpoint_interval = 10              # save occurs when length of path being abandoned is a multiple of this number
-cdef long min_save_interval = 15 * 60           # seconds
-cdef double last_save = time.monotonic()
+checkpoint_interval = 10              # save occurs when length of path being abandoned is a multiple of this number
+min_save_interval = 15 * 60           # seconds
+last_save = time.monotonic()
 checkpoint_path = None                          # or a Path
 
 # Having to do with how often abandoned paths are reported at the level VERBOSITY_REPORT_SELECTED_ABANDONED_PATHS
-cdef long abandoned_paths_length_report_interval = 8
-cdef long abandoned_paths_number_report_interval = 100000
+abandoned_paths_length_report_interval = 8
+abandoned_paths_number_report_interval = 100000
 
 # Having to do with how often the list of exhausted paths is pruned.
-cdef long exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
+exhausted_paths_prune_threshold = 1000      #FIXME! Experiment with this value
 
 # The function used to convert a bytearray into a printed output path
 output_func = lambda the_bytes, *args: ''.join(chr(o) for o in the_bytes)
 
 # Other globals
-cdef double run_start = time.monotonic()
+run_start = time.monotonic()
+
+
+cpdef void reset_data(bool confirm=False):
+    """Reset the variables used to track progress to their initial values.
+    """
+    global exhausted_paths, solutions, paths_length_at_last_prune, total_paths_exhausted_num, run_start
+    if not confirm: 
+        print("ERROR! reset_data() called without confirm=True. To avoid accidentally scuttling progres data, reset_data() must be called while manually passing confirm=True.")
+        return
+
+    exhausted_paths = None
+    solutions = set()
+    paths_length_at_last_prune = 0
+    total_paths_exhausted_num = 0
+    run_start = time.monotonic()
 
 
 cdef void do_prune_exhausted_paths_list() except *:
@@ -274,7 +289,9 @@ def solve_from_all(paths_to_nodes: Dict[int, Tuple[int]],
     solve_from_multiple(paths_to_nodes, nodes_to_paths, nodes_to_paths.keys())
 
 
-def print_all_dict_solutions(paths_to_nodes, nodes_to_paths) -> None:
+def print_all_dict_solutions(paths_to_nodes: dict, 
+                             nodes_to_paths: dict,
+                             path_formatter: typing.Optional[typing.Callable[[int], str]] = None) -> None:
     """Friendly interface that bundles together all of the various components of a
     generic solution that works fine for many purposes much of the time. It takes a
     PATHS_TO_NODES and a NODES_TO_PATHS dictionary.
@@ -285,16 +302,19 @@ def print_all_dict_solutions(paths_to_nodes, nodes_to_paths) -> None:
     global output_func
 
     p, n, p_trans, n_trans, p_trans_rev, n_trans_rev = util.normalize_dicts(paths_to_nodes, nodes_to_paths)
-    output_func = util.default_path_formatter(p_trans)
+    output_func = path_formatter or util.default_path_formatter(p_trans)
 
     solve_from_all(p, n)
 
     print("All paths examined!")
-    if not solutions:
-        print("    No solutions found!")
+    if solutions:
+        print(f"    {len(solutions)} solutions found!\n\n\n")
+    else:
+        print("    No solutions found!\n\n\n")
 
 
-def print_single_dict_solutions(single_dict: dict) -> None:
+def print_single_dict_solutions(single_dict: dict,
+                                path_formatter: typing.Optional[typing.Callable[[int], str]] = None) -> None:
     """Friendly, high-level interface to print_all_dict_solutions; a convenience
     function for command-line use that takes  SINGLE_DICT, a parameter that bundles
     together both dictionaries describing a map into a single dictionary with the
@@ -305,16 +325,17 @@ def print_single_dict_solutions(single_dict: dict) -> None:
         'paths to nodes': {  [ a valid paths_to_nodes dictionary ]  }
     }
     """
-    print_all_dict_solutions(single_dict['paths to nodes'], single_dict['nodes to paths'])
+    print_all_dict_solutions(single_dict['paths to nodes'], single_dict['nodes to paths'], path_formatter)
 
 
-def print_all_graph_solutions(graph: dict) -> None:
+def print_all_graph_solutions(graph: dict,
+                              path_formatter: typing.Optional[typing.Callable[[int], str]] = None) -> None:
     """Friendly interface that takes a graph, as defined in graph_to_dicts(), and
     finds, then prints, all solutions from any point, just as
     print_all_dict_solutions(), above, does for maps represented by dicts.
     """
     p_to_n, n_to_p = util.graph_to_dicts(graph)
-    print_all_dict_solutions(p_to_n, n_to_p)
+    print_all_dict_solutions(p_to_n, n_to_p, path_formatter)
 
 
 if __name__ == "__main__":
