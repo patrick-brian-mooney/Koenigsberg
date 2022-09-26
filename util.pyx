@@ -263,9 +263,11 @@ cpdef inline void log_it(str message, int minimum_verbosity) except *:
         print(message)
 
 
-def quick_test_harness() -> None:
+def _quick_test_harness() -> None:
     """Simple quick harness for testing something that's not going to get formally
-    written up in tests.py
+    written up in tests.py.
+
+    Don't depend on it not changing.
     """
     import tests.tests as t
     t.dense_polygon_sample_test(8)
@@ -274,5 +276,5 @@ def quick_test_harness() -> None:
 
 
 if __name__ == "__main__":
-    # quick_test_harness()              # Comment me out when not using
+    #_quick_test_harness()              # Comment me out when not using
     print("Sorry, no self-test code here!")

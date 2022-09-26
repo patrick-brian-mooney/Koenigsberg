@@ -78,7 +78,7 @@ output_func = lambda the_bytes, *args: ''.join(chr(o) for o in the_bytes)
 run_start = time.monotonic()
 
 
-cpdef void reset_data(bool confirm=False):
+cpdef void reset_data(bint confirm=False):
     """Reset the variables used to track progress to their initial values.
     """
     global exhausted_paths, solutions, paths_length_at_last_prune, total_paths_exhausted_num, run_start
